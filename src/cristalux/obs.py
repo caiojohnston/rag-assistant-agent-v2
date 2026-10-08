@@ -41,6 +41,8 @@ def _versao() -> str | None:
     """APP_VERSION (Docker/Railway) ou o hash curto do git, para saber qual codigo gerou cada trace."""
     if os.getenv("APP_VERSION"):
         return os.environ["APP_VERSION"]
+    if os.getenv("RAILWAY_GIT_COMMIT_SHA"):  # injetada pelo Railway em cada deploy
+        return os.environ["RAILWAY_GIT_COMMIT_SHA"][:7]
     try:
         import subprocess
         from cristalux.config import ROOT

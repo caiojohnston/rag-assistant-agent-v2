@@ -46,9 +46,9 @@ def chunk_decisao(d: dict) -> Chunk:
     data = d["data"]
     data_txt = data.strftime("%d/%m/%Y") if hasattr(data, "strftime") else str(data or "sem data")
     ano = data.year if hasattr(data, "year") else None
-    texto = (f"Decisao {d['id_decisao']}, data {data_txt}, tipo {d['tipo']}, responsavel {d['responsavel']}, "
-             f"impacto {d['impacto']}. Descricao: {d['descricao']}. Resultado: {d['resultado']}. "
-             f"Observacoes: {d['observacoes']}")
+    texto = (f"Decisão {d['id_decisao']}, data {data_txt}, tipo {d['tipo']}, responsável {d['responsavel']}, "
+             f"impacto {d['impacto']}. Descrição: {d['descricao']}. Resultado: {d['resultado']}. "
+             f"Observações: {d['observacoes']}")
     meta = {"fonte": "decisao", "id": d["id_decisao"], "tipo": d["tipo"] or "", "responsavel": d["responsavel"] or "",
             "impacto": d["impacto"] or "", "ano": ano or 0,
             "confianca": "nao_confiavel" if d.get("suspeita_injection") else "alta"}
@@ -59,7 +59,7 @@ def chunks_dicionario(views: dict) -> list[Chunk]:
     out = []
     for view, info in views.items():
         cols = "; ".join(f"{c}: {desc}" for c, desc in info["colunas"].items())
-        texto = f"Dicionario de dados da view {view}. {info['descricao']} Colunas: {cols}"
+        texto = f"Dicionário de dados da view {view}. {info['descricao']} Colunas: {cols}"
         for i, parte in enumerate(dividir(texto)):
             out.append(Chunk("dicionario", f"{view}#{i}", parte, {"fonte": "dicionario", "id": view, "confianca": "alta"}))
     return out
@@ -72,7 +72,7 @@ def chunks_qualidade(relatorio: dict) -> list[Chunk]:
                   f"{a['linhas_limpas']} limpas, {a['linhas_quarentena']} em quarentena."]
         for pr in a["problemas"]:
             pct = f", {pr['percentual']}%" if pr["percentual"] is not None else ""
-            linhas.append(f"Problema {pr['tipo']}: {pr['volume']} ocorrencias{pct}. Impacto: {pr['impacto']}")
+            linhas.append(f"Problema {pr['tipo']}: {pr['volume']} ocorrências{pct}. Impacto: {pr['impacto']}")
         for i, parte in enumerate(dividir("\n".join(linhas))):
             out.append(Chunk("qualidade", f"{a['arquivo']}#{i}", parte,
                              {"fonte": "qualidade", "id": a["arquivo"], "confianca": "alta"}))

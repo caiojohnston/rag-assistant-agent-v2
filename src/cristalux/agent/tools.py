@@ -60,9 +60,9 @@ def relatorio_qualidade(arquivo: str | None = None, emitir=lambda *a, **k: None)
     brutas = sum(a["linhas_brutas"] for a in arquivos)
     resumo = {
         "dados_brutos_estao_limpos": False,
-        "conclusao": (f"Os dados brutos NAO estao limpos: {quarentena} de {brutas} linhas ({round(100 * quarentena / brutas)}%) "
-                      "foram rejeitadas na limpeza por duplicidade ou dado invalido, e as linhas que permaneceram ainda "
-                      "carregam sinalizacoes. A base limpa no Postgres e usavel com as ressalvas abaixo."),
+        "conclusao": (f"Os dados brutos NÃO estão limpos: {quarentena} de {brutas} linhas ({round(100 * quarentena / brutas)}%) "
+                      "foram rejeitadas na limpeza por duplicidade ou dado inválido, e as linhas que permaneceram ainda "
+                      "carregam sinalizações. A base limpa no Postgres é usável com as ressalvas abaixo."),
         "linhas_brutas": brutas, "linhas_rejeitadas": quarentena,
         "arquivos": [{"arquivo": a["arquivo"], "linhas_brutas": a["linhas_brutas"], "linhas_limpas": a["linhas_limpas"],
                       "linhas_quarentena": a["linhas_quarentena"],

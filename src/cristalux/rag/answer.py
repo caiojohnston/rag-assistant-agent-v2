@@ -6,7 +6,7 @@ from cristalux.llm import gerar_texto
 from cristalux.rag.retriever import Trecho, buscar
 from cristalux.security.verificador import vazou
 
-NAO_ENCONTRADO = "Nao encontrei essa informacao nos documentos disponiveis."
+NAO_ENCONTRADO = "Não encontrei essa informação nos documentos disponíveis."
 
 SYSTEM = """Voce responde perguntas sobre a empresa Cristalux usando EXCLUSIVAMENTE os trechos fornecidos.
 Regras:

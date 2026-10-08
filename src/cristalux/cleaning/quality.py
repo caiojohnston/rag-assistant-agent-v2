@@ -15,41 +15,41 @@ from cristalux.cleaning import parsers as p
 from cristalux.cleaning.base import Resultado
 
 IMPACTO = {
-    "registro_vazio": "Linha sem informacao util; inflaria contagens de registros se mantida.",
+    "registro_vazio": "Linha sem informação útil; inflaria contagens de registros se mantida.",
     "duplicata_exata": "Linha repetida; duplicaria faturamento e contagem de vendas.",
-    "duplicata_cnpj": "Mesmo cliente com dois cadastros; fragmenta o historico e distorce rankings de compradores.",
-    "duplicata_nome": "Mesmo item/pessoa cadastrado duas vezes; distorce contagens e estoque total.",
-    "id_duplicado": "Mesmo id de venda com conteudos diferentes; so um registro pode ser o verdadeiro.",
-    "data_vazia": "Venda sem data nao entra em nenhuma serie mensal; sai do faturamento por vendedor.",
-    "data_inexistente": "Data impossivel (ex: 30/02, mes 22); nao e possivel alocar a venda a um mes.",
-    "data_formato_desconhecido": "Data incompleta (ex: 'Jul/2021'); sem dia nao ha como fechar o mes com certeza.",
-    "data_fora_do_periodo": "Venda fora de 2020-2024; contaminaria a analise do periodo pedido.",
-    "quantidade_negativa": "Quantidade negativa sem relacao com a coluna de status; faturamento ficaria subestimado.",
-    "quantidade_invalida": "Quantidade ausente ou zero; impossivel calcular valor.",
-    "valor_unitario_invalido": "Preco ausente ou nao positivo; impossivel calcular valor.",
-    "status_ausente": "Sem status nao e possivel saber se a venda foi concluida.",
-    "vendedor_ausente": "Venda sem vendedor nao entra no ranking por vendedor.",
-    "vendedor_inexistente": "Vendedor sem cadastro; desempenho nao pode ser atribuido.",
-    "comprador_ausente": "Venda sem comprador nao entra em analises por cliente.",
-    "comprador_inexistente": "Comprador sem cadastro valido (registro vazio ou inexistente).",
-    "id_venda_ausente": "Venda sem identificador; nao ha como deduplicar.",
-    "estoque_negativo": "Estoque negativo e fisicamente impossivel; indica erro de lancamento.",
-    "data_ambigua": "Data com hifen que pode ser dd-mm ou mm-dd; risco de cair no mes errado.",
+    "duplicata_cnpj": "Mesmo cliente com dois cadastros; fragmenta o histórico e distorce rankings de compradores.",
+    "duplicata_nome": "Mesmo item ou pessoa cadastrado duas vezes; distorce contagens e estoque total.",
+    "id_duplicado": "Mesmo id de venda com conteúdos diferentes; só um registro pode ser o verdadeiro.",
+    "data_vazia": "Venda sem data não entra em nenhuma série mensal; sai do faturamento por vendedor.",
+    "data_inexistente": "Data impossível (ex: 30/02, mês 22); não é possível alocar a venda a um mês.",
+    "data_formato_desconhecido": "Data incompleta (ex: 'Jul/2021'); sem dia não há como fechar o mês com certeza.",
+    "data_fora_do_periodo": "Venda fora de 2020-2024; contaminaria a análise do período pedido.",
+    "quantidade_negativa": "Quantidade negativa sem relação com a coluna de status; faturamento ficaria subestimado.",
+    "quantidade_invalida": "Quantidade ausente ou zero; impossível calcular valor.",
+    "valor_unitario_invalido": "Preço ausente ou não positivo; impossível calcular valor.",
+    "status_ausente": "Sem status não é possível saber se a venda foi concluída.",
+    "vendedor_ausente": "Venda sem vendedor não entra no ranking por vendedor.",
+    "vendedor_inexistente": "Vendedor sem cadastro; desempenho não pode ser atribuído.",
+    "comprador_ausente": "Venda sem comprador não entra em análises por cliente.",
+    "comprador_inexistente": "Comprador sem cadastro válido (registro vazio ou inexistente).",
+    "id_venda_ausente": "Venda sem identificador; não há como deduplicar.",
+    "estoque_negativo": "Estoque negativo é fisicamente impossível; indica erro de lançamento.",
+    "data_ambigua": "Data com hífen que pode ser dd-mm ou mm-dd; risco de cair no mês errado.",
     "desconto_indefinido": "Desconto 'Sim' ou vazio sem percentual; margem real incerta.",
-    "desconto_acima_limite": "Desconto acima de 10%, o limite da decisao D018.",
-    "valor_total_divergente": "valor_total informado difere de quantidade x preco unitario; usa-se o recalculado.",
-    "categoria_incoerente": "Categoria da venda diferente da categoria natural do produto; analise por categoria nao e confiavel.",
-    "venda_antes_da_admissao": "Venda anterior a data de admissao do vendedor; cadastro ou data da venda esta errado.",
-    "uf_ausente": "Venda sem regiao; fica fora de analises regionais.",
-    "cnpj_invalido": "CNPJ com digitos verificadores invalidos; cadastro pode estar errado.",
+    "desconto_acima_limite": "Desconto acima de 10%, o limite da decisão D018.",
+    "valor_total_divergente": "valor_total informado difere de quantidade x preço unitário; usa-se o recalculado.",
+    "categoria_incoerente": "Categoria da venda diferente da categoria natural do produto; análise por categoria não é confiável.",
+    "venda_antes_da_admissao": "Venda anterior à data de admissão do vendedor; o cadastro ou a data da venda está errado.",
+    "uf_ausente": "Venda sem região; fica fora de análises regionais.",
+    "cnpj_invalido": "CNPJ com dígitos verificadores inválidos; cadastro pode estar errado.",
     "email_ausente": "Sem e-mail de contato.",
-    "email_dominio_incomum": "Dominio de e-mail diferente do corporativo; provavel erro de digitacao.",
-    "admissao_invalida": "Data de admissao no futuro ou invalida.",
-    "data_cadastro_invalida": "Data de cadastro invalida.",
-    "reposicao_invalida": "Data de reposicao invalida ou no futuro.",
-    "fornecedor_ausente": "Fornecedor desconhecido; atrapalha reposicao.",
-    "data_invalida": "Data da decisao invalida.",
-    "suspeita_injection": "Texto com instrucoes dirigidas a assistentes de IA; um LLM ingenuo pode obedece-lo.",
+    "email_dominio_incomum": "Domínio de e-mail diferente do corporativo; provável erro de digitação.",
+    "admissao_invalida": "Data de admissão no futuro ou inválida.",
+    "data_cadastro_invalida": "Data de cadastro inválida.",
+    "reposicao_invalida": "Data de reposição inválida ou no futuro.",
+    "fornecedor_ausente": "Fornecedor desconhecido; atrapalha a reposição.",
+    "data_invalida": "Data da decisão inválida.",
+    "suspeita_injection": "Texto com instruções dirigidas a assistentes de IA; um LLM ingênuo pode obedecê-lo.",
 }
 
 _FORMATOS_DATA = [
@@ -87,7 +87,7 @@ def perfil_arquivo(nome: str, raw: pd.DataFrame, res: Resultado, extras: dict | 
         problemas.append(_entrada(motivo, n, total))
     if len(res.clean) and "flags" in res.clean:
         for flag, n in res.clean["flags"].explode().dropna().value_counts().items():
-            problemas.append(_entrada(flag, n, len(res.clean), "sobre linhas que permaneceram na base limpa"))
+            problemas.append(_entrada(flag, n, len(res.clean), "sobre as linhas que permaneceram na base limpa"))
     if "suspeita_injection" in res.clean and res.clean["suspeita_injection"].any():
         problemas.append(_entrada("suspeita_injection", int(res.clean["suspeita_injection"].sum()), len(res.clean),
                                   "id(s): " + ", ".join(res.clean.loc[res.clean["suspeita_injection"], "id_decisao"])))
@@ -95,7 +95,7 @@ def perfil_arquivo(nome: str, raw: pd.DataFrame, res: Resultado, extras: dict | 
         brutas, normalizadas = serie
         if brutas > normalizadas:
             problemas.append({"tipo": f"grafias_diferentes:{coluna}", "volume": brutas, "percentual": None,
-                              "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo "
+                              "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo "
                                          f"ficariam fragmentados ({brutas} grafias para {normalizadas} valores reais).",
                               "detalhe": f"{brutas} grafias brutas, {normalizadas} normalizadas"})
     perfil = {"arquivo": nome, "linhas_brutas": total, "linhas_limpas": len(res.clean),
@@ -114,7 +114,7 @@ def gerar_relatorio(perfis: list[dict]) -> dict:
 
 
 def para_markdown(rel: dict) -> str:
-    out = ["# Relatorio de qualidade dos dados", ""]
+    out = ["# Relatório de qualidade dos dados", ""]
     r = rel["resumo"]
     out.append(f"Linhas brutas: {r['total_linhas_brutas']}. Linhas na base limpa: {r['total_linhas_limpas']}. "
                f"Linhas em quarentena: {r['total_quarentena']}.")

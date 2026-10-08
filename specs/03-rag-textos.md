@@ -23,12 +23,12 @@ O tamanho final é validado nos experimentos descritos em `06` e documentado no 
 
 ## Embeddings (RF-21)
 
-Modelo candidato: `gemini-embedding-001` (free tier, multilíngue, mesma conta do LLM). Alternativa local: `intfloat/multilingual-e5-base`. A escolha final sai de um teste curto de context recall nos pares de avaliação com os dois, registrado no README. Consulta e documento usam `task_type` correspondente (`RETRIEVAL_QUERY` e `RETRIEVAL_DOCUMENT`).
+Decidido: `gemini-embedding-001` (free tier, multilíngue, mesma conta do LLM), contra o modelo local `paraphrase-multilingual-MiniLM-L12-v2` (fastembed, ONNX). No experimento (`reports/experimentos.md`) o Gemini acertou o primeiro resultado em 100% das perguntas contra 87% do local, e separou melhor as perguntas fora do corpus. O modelo local fica como alternativa sem rede. Consulta e documento usam `task_type` correspondente (`RETRIEVAL_QUERY` e `RETRIEVAL_DOCUMENT`).
 
 ## Retrieval (RF-22)
 
 - Busca por similaridade de cosseno, `k = 5`.
-- Threshold de similaridade: valor inicial 0,55, calibrado nos pares de avaliação. Abaixo dele nada é devolvido, e o agente responde "não encontrei isso nos documentos". O valor final e a curva de calibração entram no README.
+- Threshold de similaridade: 0,70 para o Gemini e 0,50 para o modelo local, calibrado por varredura (`reports/experimentos.md`). Com 0,55 (valor inicial) nenhuma pergunta fora do corpus era recusada. Com 0,70 o recall@5 das perguntas com resposta continua 100% e 100% das perguntas fora do corpus não recuperam nada. Abaixo dele nada é devolvido, e o agente responde que não encontrou nos documentos. Limite da calibração: 25 perguntas, então a margem (mínimo das positivas 0,746 contra máximo das negativas 0,671) é estreita e deve ser recalibrada com perguntas reais.
 - Filtro opcional por metadados quando a pergunta cita ano, tipo ou responsável.
 - Sem reranker na primeira versão. Registrar como melhoria futura.
 

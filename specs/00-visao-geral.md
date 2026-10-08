@@ -29,7 +29,7 @@ Fora:
 | Tema | Decisão |
 |---|---|
 | Linguagem | Python 3.11 |
-| LLM | Gemini, free tier (`gemini-2.5-flash`, configurável por variável de ambiente) |
+| LLM | Gemini, free tier: `gemini-3.1-flash-lite`, configurável por `GEMINI_MODEL`. O `gemini-3.5-flash` tem cota gratuita de 20 requisições por dia, inviável para desenvolvimento e avaliação; o `gemini-2.5-flash` não está mais disponível para contas novas |
 | Banco tabular | PostgreSQL em Docker |
 | Banco vetorial | ChromaDB, persistente em disco |
 | Avaliação | RAGAS para o RAG, comparação de resultado contra gabarito para o SQL |

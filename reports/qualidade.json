@@ -10,56 +10,56 @@
           "tipo": "duplicata_cnpj",
           "volume": 13,
           "percentual": 43.3,
-          "impacto": "Mesmo cliente com dois cadastros; fragmenta o historico e distorce rankings de compradores.",
+          "impacto": "Mesmo cliente com dois cadastros; fragmenta o histórico e distorce rankings de compradores.",
           "detalhe": ""
         },
         {
           "tipo": "registro_vazio",
           "volume": 2,
           "percentual": 6.7,
-          "impacto": "Linha sem informacao util; inflaria contagens de registros se mantida.",
+          "impacto": "Linha sem informação útil; inflaria contagens de registros se mantida.",
           "detalhe": ""
         },
         {
           "tipo": "cnpj_invalido",
           "volume": 15,
           "percentual": 100.0,
-          "impacto": "CNPJ com digitos verificadores invalidos; cadastro pode estar errado.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "CNPJ com dígitos verificadores inválidos; cadastro pode estar errado.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "data_cadastro_invalida",
           "volume": 1,
           "percentual": 6.7,
-          "impacto": "Data de cadastro invalida.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Data de cadastro inválida.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "email_ausente",
           "volume": 1,
           "percentual": 6.7,
           "impacto": "Sem e-mail de contato.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "grafias_diferentes:estado",
           "volume": 19,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (19 grafias para 9 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (19 grafias para 9 valores reais).",
           "detalhe": "19 grafias brutas, 9 normalizadas"
         },
         {
           "tipo": "grafias_diferentes:segmento",
           "volume": 8,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (8 grafias para 5 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (8 grafias para 5 valores reais).",
           "detalhe": "8 grafias brutas, 5 normalizadas"
         },
         {
           "tipo": "grafias_diferentes:porte",
           "volume": 9,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (9 grafias para 4 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (9 grafias para 4 valores reais).",
           "detalhe": "9 grafias brutas, 4 normalizadas"
         }
       ],
@@ -82,7 +82,7 @@
           "tipo": "registro_vazio",
           "volume": 1,
           "percentual": 5.0,
-          "impacto": "Linha sem informacao util; inflaria contagens de registros se mantida.",
+          "impacto": "Linha sem informação útil; inflaria contagens de registros se mantida.",
           "detalhe": ""
         },
         {
@@ -96,28 +96,28 @@
           "tipo": "email_dominio_incomum",
           "volume": 3,
           "percentual": 16.7,
-          "impacto": "Dominio de e-mail diferente do corporativo; provavel erro de digitacao.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Domínio de e-mail diferente do corporativo; provável erro de digitação.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "email_ausente",
           "volume": 1,
           "percentual": 5.6,
           "impacto": "Sem e-mail de contato.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "admissao_invalida",
           "volume": 1,
           "percentual": 5.6,
-          "impacto": "Data de admissao no futuro ou invalida.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Data de admissão no futuro ou inválida.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "grafias_diferentes:regiao",
           "volume": 18,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (18 grafias para 8 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (18 grafias para 8 valores reais).",
           "detalhe": "18 grafias brutas, 8 normalizadas"
         }
       ],
@@ -138,22 +138,22 @@
           "tipo": "duplicata_nome",
           "volume": 13,
           "percentual": 43.3,
-          "impacto": "Mesmo item/pessoa cadastrado duas vezes; distorce contagens e estoque total.",
+          "impacto": "Mesmo item ou pessoa cadastrado duas vezes; distorce contagens e estoque total.",
           "detalhe": ""
         },
         {
           "tipo": "registro_vazio",
           "volume": 2,
           "percentual": 6.7,
-          "impacto": "Linha sem informacao util; inflaria contagens de registros se mantida.",
+          "impacto": "Linha sem informação útil; inflaria contagens de registros se mantida.",
           "detalhe": ""
         },
         {
           "tipo": "reposicao_invalida",
           "volume": 2,
           "percentual": 13.3,
-          "impacto": "Data de reposicao invalida ou no futuro.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Data de reposição inválida ou no futuro.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         }
       ],
       "formatos_data": {
@@ -175,7 +175,7 @@
           "tipo": "registro_vazio",
           "volume": 2,
           "percentual": 8.7,
-          "impacto": "Linha sem informacao util; inflaria contagens de registros se mantida.",
+          "impacto": "Linha sem informação útil; inflaria contagens de registros se mantida.",
           "detalhe": ""
         },
         {
@@ -189,7 +189,7 @@
           "tipo": "suspeita_injection",
           "volume": 1,
           "percentual": 5.0,
-          "impacto": "Texto com instrucoes dirigidas a assistentes de IA; um LLM ingenuo pode obedece-lo.",
+          "impacto": "Texto com instruções dirigidas a assistentes de IA; um LLM ingênuo pode obedecê-lo.",
           "detalhe": "id(s): D013"
         }
       ],
@@ -208,21 +208,21 @@
           "tipo": "data_vazia",
           "volume": 26,
           "percentual": 13.7,
-          "impacto": "Venda sem data nao entra em nenhuma serie mensal; sai do faturamento por vendedor.",
+          "impacto": "Venda sem data não entra em nenhuma série mensal; sai do faturamento por vendedor.",
           "detalhe": ""
         },
         {
           "tipo": "data_inexistente",
           "volume": 19,
           "percentual": 10.0,
-          "impacto": "Data impossivel (ex: 30/02, mes 22); nao e possivel alocar a venda a um mes.",
+          "impacto": "Data impossível (ex: 30/02, mês 22); não é possível alocar a venda a um mês.",
           "detalhe": ""
         },
         {
           "tipo": "quantidade_negativa",
           "volume": 19,
           "percentual": 10.0,
-          "impacto": "Quantidade negativa sem relacao com a coluna de status; faturamento ficaria subestimado.",
+          "impacto": "Quantidade negativa sem relação com a coluna de status; faturamento ficaria subestimado.",
           "detalhe": ""
         },
         {
@@ -236,126 +236,126 @@
           "tipo": "quantidade_invalida",
           "volume": 10,
           "percentual": 5.3,
-          "impacto": "Quantidade ausente ou zero; impossivel calcular valor.",
+          "impacto": "Quantidade ausente ou zero; impossível calcular valor.",
           "detalhe": ""
         },
         {
           "tipo": "comprador_inexistente",
           "volume": 9,
           "percentual": 4.7,
-          "impacto": "Comprador sem cadastro valido (registro vazio ou inexistente).",
+          "impacto": "Comprador sem cadastro válido (registro vazio ou inexistente).",
           "detalhe": ""
         },
         {
           "tipo": "data_fora_do_periodo",
           "volume": 8,
           "percentual": 4.2,
-          "impacto": "Venda fora de 2020-2024; contaminaria a analise do periodo pedido.",
+          "impacto": "Venda fora de 2020-2024; contaminaria a análise do período pedido.",
           "detalhe": ""
         },
         {
           "tipo": "data_formato_desconhecido",
           "volume": 4,
           "percentual": 2.1,
-          "impacto": "Data incompleta (ex: 'Jul/2021'); sem dia nao ha como fechar o mes com certeza.",
+          "impacto": "Data incompleta (ex: 'Jul/2021'); sem dia não há como fechar o mês com certeza.",
           "detalhe": ""
         },
         {
           "tipo": "valor_unitario_invalido",
           "volume": 3,
           "percentual": 1.6,
-          "impacto": "Preco ausente ou nao positivo; impossivel calcular valor.",
+          "impacto": "Preço ausente ou não positivo; impossível calcular valor.",
           "detalhe": ""
         },
         {
           "tipo": "status_ausente",
           "volume": 3,
           "percentual": 1.6,
-          "impacto": "Sem status nao e possivel saber se a venda foi concluida.",
+          "impacto": "Sem status não é possível saber se a venda foi concluída.",
           "detalhe": ""
         },
         {
           "tipo": "vendedor_ausente",
           "volume": 3,
           "percentual": 1.6,
-          "impacto": "Venda sem vendedor nao entra no ranking por vendedor.",
+          "impacto": "Venda sem vendedor não entra no ranking por vendedor.",
           "detalhe": ""
         },
         {
           "tipo": "comprador_ausente",
           "volume": 3,
           "percentual": 1.6,
-          "impacto": "Venda sem comprador nao entra em analises por cliente.",
+          "impacto": "Venda sem comprador não entra em análises por cliente.",
           "detalhe": ""
         },
         {
           "tipo": "id_venda_ausente",
           "volume": 1,
           "percentual": 0.5,
-          "impacto": "Venda sem identificador; nao ha como deduplicar.",
+          "impacto": "Venda sem identificador; não há como deduplicar.",
           "detalhe": ""
         },
         {
           "tipo": "categoria_incoerente",
           "volume": 72,
           "percentual": 75.0,
-          "impacto": "Categoria da venda diferente da categoria natural do produto; analise por categoria nao e confiavel.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Categoria da venda diferente da categoria natural do produto; análise por categoria não é confiável.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "desconto_indefinido",
           "volume": 26,
           "percentual": 27.1,
           "impacto": "Desconto 'Sim' ou vazio sem percentual; margem real incerta.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "venda_antes_da_admissao",
           "volume": 25,
           "percentual": 26.0,
-          "impacto": "Venda anterior a data de admissao do vendedor; cadastro ou data da venda esta errado.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Venda anterior à data de admissão do vendedor; o cadastro ou a data da venda está errado.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "valor_total_divergente",
           "volume": 12,
           "percentual": 12.5,
-          "impacto": "valor_total informado difere de quantidade x preco unitario; usa-se o recalculado.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "valor_total informado difere de quantidade x preço unitário; usa-se o recalculado.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "data_ambigua",
           "volume": 4,
           "percentual": 4.2,
-          "impacto": "Data com hifen que pode ser dd-mm ou mm-dd; risco de cair no mes errado.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
+          "impacto": "Data com hífen que pode ser dd-mm ou mm-dd; risco de cair no mês errado.",
+          "detalhe": "sobre as linhas que permaneceram na base limpa"
         },
         {
           "tipo": "grafias_diferentes:regiao",
           "volume": 35,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (35 grafias para 8 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (35 grafias para 8 valores reais).",
           "detalhe": "35 grafias brutas, 8 normalizadas"
         },
         {
           "tipo": "grafias_diferentes:status",
           "volume": 14,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (14 grafias para 4 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (14 grafias para 4 valores reais).",
           "detalhe": "14 grafias brutas, 4 normalizadas"
         },
         {
           "tipo": "grafias_diferentes:produto",
           "volume": 27,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (27 grafias para 10 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (27 grafias para 10 valores reais).",
           "detalhe": "27 grafias brutas, 10 normalizadas"
         },
         {
           "tipo": "grafias_diferentes:categoria",
           "volume": 11,
           "percentual": null,
-          "impacto": "O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (11 grafias para 4 valores reais).",
+          "impacto": "O mesmo valor aparece escrito de várias formas; agrupamentos por esse campo ficariam fragmentados (11 grafias para 4 valores reais).",
           "detalhe": "11 grafias brutas, 4 normalizadas"
         }
       ],
