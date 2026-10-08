@@ -11,6 +11,10 @@ COPY pyproject.toml ./
 COPY src ./src
 RUN pip install .
 
+# Modelo de embeddings local embutido na imagem: e a reserva se a cota de embeddings do Gemini acabar.
+ENV FASTEMBED_CACHE_PATH=/opt/fastembed
+RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')"
+
 COPY app ./app
 COPY sql ./sql
 COPY specs ./specs

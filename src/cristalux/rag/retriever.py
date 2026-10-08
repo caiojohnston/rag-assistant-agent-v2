@@ -37,13 +37,15 @@ def buscar(consulta: str, k: int | None = None, threshold: float | None = None, 
     """Devolve ate k trechos com similaridade (cosseno) acima do threshold, do mais ao menos similar."""
     embedder = embedder or get_embedder()
     k = k or settings.rag_k
-    limite = threshold_do_backend(embedder.nome) if threshold is None else threshold
-    obs.atualizar(input=consulta, metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": embedder.nome})
-    col = colecao(embedder.nome)
+    vetor = embedder.embed_query(consulta)  # pode trocar de backend se a cota do Gemini acabou
+    backend = embedder.nome
+    limite = threshold_do_backend(backend) if threshold is None else threshold
+    obs.atualizar(input=consulta, metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": backend})
+    col = colecao(backend)
     if col.count() == 0:
         obs.atualizar(output=[])
         return []
-    r = col.query(query_embeddings=[embedder.embed_query(consulta)], n_results=min(k, col.count()),
+    r = col.query(query_embeddings=[vetor], n_results=min(k, col.count()),
                   where=filtro or None, include=["documents", "metadatas", "distances"])
     trechos = []
     for cid, doc, meta, dist in zip(r["ids"][0], r["documents"][0], r["metadatas"][0], r["distances"][0]):
@@ -54,7 +56,7 @@ def buscar(consulta: str, k: int | None = None, threshold: float | None = None, 
     # Saida com o texto recuperado: e o contexto que o modelo viu ao decidir.
     obs.atualizar(output=[{"id": t.id, "fonte": t.fonte, "score": t.score, "confianca": t.confianca,
                            "texto": t.texto[:400]} for t in trechos],
-                  metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": embedder.nome,
+                  metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": backend,
                             "recuperados": len(trechos), "descartados_pelo_threshold": min(k, col.count()) - len(trechos)},
                   **_alerta(trechos))
     return trechos

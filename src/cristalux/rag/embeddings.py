@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import os
 import re
 from typing import Protocol
 
@@ -85,6 +86,48 @@ class HashEmbedder:
         return self._vec(texto)
 
 
+class ComFallback:
+    """Gemini como primario; se a cota diaria de embeddings acabar, usa o modelo local pelo resto do processo.
+
+    `nome` muda para "local" apos a troca, e quem usa (retriever, indexador) escolhe a colecao do Chroma e o
+    threshold pelo nome atual. As duas colecoes sao mantidas pelo indexador (rag/index.py).
+    """
+
+    def __init__(self, primario, secundario=None):
+        self.primario = primario
+        self._secundario = secundario
+        self._trocou = False
+
+    @property
+    def nome(self) -> str:
+        return self._secundario_nome() if self._trocou else self.primario.nome
+
+    def _secundario_nome(self) -> str:
+        return self._get_secundario().nome
+
+    def _get_secundario(self):
+        if self._secundario is None:
+            self._secundario = LocalEmbedder()
+        return self._secundario
+
+    def _chamar(self, metodo: str, arg):
+        from cristalux.llm import CotaDiariaEsgotada
+
+        if not self._trocou:
+            try:
+                return getattr(self.primario, metodo)(arg)
+            except CotaDiariaEsgotada:
+                self._trocou = True
+                print("aviso: cota de embeddings do Gemini esgotada; usando o modelo local")
+        return getattr(self._get_secundario(), metodo)(arg)
+
+    def embed_documents(self, textos):
+        return self._chamar("embed_documents", textos)
+
+    def embed_query(self, texto):
+        return self._chamar("embed_query", texto)
+
+
 # Threshold de similaridade (cosseno) por backend. Calibrados em reports/experimentos.md (varredura de threshold, spec 06).
 THRESHOLD_PADRAO = {"gemini": 0.70, "local": 0.50, "hash": 0.2}
 
@@ -98,7 +141,8 @@ def backend_padrao() -> str:
 def get_embedder(backend: str | None = None) -> Embedder:
     backend = backend or backend_padrao()
     if backend == "gemini":
-        return GeminiEmbedder()
+        # EMBEDDING_FALLBACK=off desliga a troca automatica para o modelo local quando a cota acaba.
+        return GeminiEmbedder() if os.getenv("EMBEDDING_FALLBACK", "local") == "off" else ComFallback(GeminiEmbedder())
     if backend == "local":
         return LocalEmbedder()
     if backend == "hash":

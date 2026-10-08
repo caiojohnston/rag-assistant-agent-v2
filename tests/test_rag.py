@@ -83,3 +83,24 @@ def test_trecho_suspeito_chega_marcado(chroma_tmp):
     achados = buscar("avaliacao de qualidade da base", embedder=e, threshold=0.0)
     d013 = next(t for t in achados if t.id == "D013")
     assert d013.confianca == "nao_confiavel"
+
+
+def test_fallback_troca_para_o_secundario_quando_a_cota_acaba(chroma_tmp):
+    from cristalux.llm import CotaDiariaEsgotada
+    from cristalux.rag.embeddings import ComFallback
+
+    class Esgotado:
+        nome = "gemini"
+
+        def embed_documents(self, textos):
+            raise CotaDiariaEsgotada("acabou")
+
+        def embed_query(self, texto):
+            raise CotaDiariaEsgotada("acabou")
+
+    e = ComFallback(Esgotado(), HashEmbedder())
+    assert e.nome == "gemini"
+    r = store.indexar(chunks(), e)          # cai no secundario e indexa a colecao dele
+    assert e.nome == "hash" and r["backend"] == "hash" and r["total"] == 3
+    achados = buscar("abertura de deposito em Salvador", embedder=e, threshold=0.2)
+    assert achados and achados[0].id == "D004"

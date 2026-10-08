@@ -17,7 +17,8 @@ def colecao(backend: str):
 def indexar(chunks: list[Chunk], embedder: Embedder | None = None) -> dict:
     """Embeda so o que e novo ou mudou e remove o que saiu do corpus. Reindexar sem mudanca embeda zero."""
     embedder = embedder or get_embedder()
-    col = colecao(embedder.nome)
+    nome_inicial = embedder.nome
+    col = colecao(nome_inicial)
     desejados = {c.chunk_id: c for c in chunks}
     existentes = set(col.get(include=[])["ids"])
 
@@ -27,6 +28,8 @@ def indexar(chunks: list[Chunk], embedder: Embedder | None = None) -> dict:
         col.delete(ids=removidos)
     if novos:
         vetores = embedder.embed_documents([c.texto for c in novos])
+        if embedder.nome != nome_inicial:  # a cota do primario acabou no meio: refaz na colecao do secundario
+            return indexar(chunks, embedder)
         col.upsert(ids=[c.chunk_id for c in novos], embeddings=vetores,
                    documents=[c.texto for c in novos], metadatas=[c.metadata for c in novos])
     return {"backend": embedder.nome, "novos": len(novos), "removidos": len(removidos),
