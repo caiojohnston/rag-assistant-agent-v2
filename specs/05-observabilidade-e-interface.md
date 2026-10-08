@@ -19,7 +19,7 @@
 - Entrada e saída são definidas explicitamente (`capture_input=False`), para não enviar argumentos de função nem credenciais. `mask` remove e-mail, CNPJ e telefone antes do envio.
 - Busca que traz texto não confiável (D013) sobe como `WARNING`; SQL bloqueado também.
 - Scores: `user-feedback` (polegar na interface) e, nas avaliações, `hit_at_k`, `recusa_correta`, `ragas_*`, `execution_accuracy`, `numeros_fieis`, `adversarial_passou`.
-- Limitação: o `gemini-3.5-flash` conta os tokens de raciocínio, mas não devolve o resumo do raciocínio pela API, então só a contagem fica registrada.
+- Raciocínio do modelo: o `gemini-3.5-flash` contava os tokens de raciocínio mas não devolvia o resumo; o `gemini-3.1-flash-lite` devolve, e o resumo vai no campo `reasoning` da generation e como evento na interface.
 - A API v1 de traces não existe para organizações novas do Langfuse Cloud; a interface lê os passos pela API v2 de observações.
 
 Hospedagem: Langfuse Cloud (plano gratuito) por padrão, pela simplicidade. Para uso 100% local há o caminho self-host via Docker Compose oficial do Langfuse, que exige mais serviços (ClickHouse, Redis, MinIO). A escolha é feita por variáveis de ambiente (`LANGFUSE_HOST`) e não altera o código.

@@ -181,7 +181,7 @@ Se o SQL falha, o erro volta ao modelo para até duas correções.
 - **Integração automática do Langfuse com o Gemini (OpenInference):** gerava nomes genéricos, cabeçalhos HTTP na saída e não registrava o raciocínio. Troquei por observações manuais com nomes estáveis.
 - **Few-shot igual às perguntas de avaliação:** contaminaria o teste. Os exemplos do agente de SQL foram trocados por perguntas diferentes.
 - **RAGAS 0.4 com `langchain-community` recente:** erro de importação. Fixei `langchain-community==0.3.31`.
-- **Resumo do raciocínio do modelo no trace:** o Gemini 3.x conta os tokens de raciocínio mas não devolve o texto pela API. Só a contagem fica registrada.
+- **Resumo do raciocínio do modelo no trace:** o `gemini-3.5-flash` contava os tokens de raciocínio mas não devolvia o texto pela API. O `gemini-3.1-flash-lite`, adotado, devolve o resumo, que fica no campo `reasoning` de cada generation e aparece no passo a passo da interface.
 
 ## Limpeza e qualidade dos dados
 
@@ -389,7 +389,6 @@ Ela não garante que o sistema funciona para usuários reais. São 39 casos escr
 - **Margem do threshold.** O mínimo das positivas (0,745) e o máximo das negativas (0,671) estão a 0,07 de distância, calibrados com 25 perguntas.
 - **Detector de injection por padrões.** Pega o caso da D013 e variantes próximas. Uma formulação nova passa pelo detector; o que protege nesse caso é a estrutura (qualidade medida por código, texto como dado, verificador de saída).
 - **Interface.** Streamlit com uma senha única; sem usuários, sem limite de uso por pessoa.
-- **Raciocínio do modelo.** O Gemini 3.x não devolve o texto do raciocínio pela API, então o trace só tem a contagem de tokens de raciocínio.
 
 ### O que eu faria com mais tempo ou recursos
 
