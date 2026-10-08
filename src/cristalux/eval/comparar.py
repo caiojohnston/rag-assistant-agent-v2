@@ -32,7 +32,8 @@ def comparar(gabarito: dict, colunas: list[str], linhas: list[dict]) -> tuple[bo
         ok = len(linhas) == 0 or all(all(v in (None, 0, 0.0) for v in l.values()) for l in linhas)
         return ok, "sem linhas ou zero" if ok else f"esperava vazio, veio {linhas[:2]}"
 
-    esperadas = [_celulas(l) for l in gabarito["linhas"]]
+    # Uma linha esperada pode ser {"ou": [linhaA, linhaB]} (empate no corte do top N): qualquer alternativa vale.
+    esperadas = [[_celulas(a) for a in l["ou"]] if isinstance(l, dict) else [_celulas(l)] for l in gabarito["linhas"]]
     if tipo == "escalar":
         alvo = _norm(gabarito["linhas"][0][0])
         achou = any(alvo in _celulas(l) for l in linhas)
@@ -42,11 +43,11 @@ def comparar(gabarito: dict, colunas: list[str], linhas: list[dict]) -> tuple[bo
         return False, f"esperava {len(esperadas)} linhas, veio {len(linhas)}"
     obtidas = [_celulas(l) for l in linhas]
     if gabarito.get("ordenada"):
-        ok = all(_contido(e, o) for e, o in zip(esperadas, obtidas))
+        ok = all(any(_contido(alt, o) for alt in e) for e, o in zip(esperadas, obtidas))
         return ok, "ordem/valores conferem" if ok else f"esperado {gabarito['linhas']}, obtido {linhas}"
     restantes = list(obtidas)
     for e in esperadas:
-        idx = next((i for i, o in enumerate(restantes) if _contido(e, o)), None)
+        idx = next((i for i, o in enumerate(restantes) if any(_contido(alt, o) for alt in e)), None)
         if idx is None:
             return False, f"linha esperada ausente: {e}; obtido {linhas}"
         restantes.pop(idx)

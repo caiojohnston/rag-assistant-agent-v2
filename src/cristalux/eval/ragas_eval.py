@@ -11,7 +11,7 @@ def avaliar(amostras: list[dict]) -> dict[str, dict] | None:
     """amostras: [{id, pergunta, resposta, contextos, referencia}]. Devolve {id: {metrica: nota}} ou None se indisponivel."""
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-        from ragas import EvaluationDataset, evaluate
+        from ragas import EvaluationDataset, RunConfig, evaluate
         from ragas.embeddings import LangchainEmbeddingsWrapper
         from ragas.llms import LangchainLLMWrapper
         from ragas.metrics import Faithfulness, LLMContextRecall, ResponseRelevancy
@@ -32,8 +32,10 @@ def avaliar(amostras: list[dict]) -> dict[str, dict] | None:
         "user_input": a["pergunta"], "response": a["resposta"], "retrieved_contexts": a["contextos"],
         "reference": a["referencia"]} for a in validas])
     try:
-        res = evaluate(ds, metrics=[Faithfulness(), ResponseRelevancy(), LLMContextRecall()], llm=llm, embeddings=emb,
-                       show_progress=False)
+        # Poucos workers e timeout curto: o free tier limita requisicoes por minuto e o RAGAS repete em silencio.
+        res = evaluate(ds, metrics=[Faithfulness(), ResponseRelevancy(strictness=1), LLMContextRecall()], llm=llm, embeddings=emb,
+                       run_config=RunConfig(max_workers=2, timeout=90, max_retries=3), raise_exceptions=False,
+                       show_progress=True)
     except Exception as e:
         print(f"RAGAS falhou: {type(e).__name__}: {e}")
         return None

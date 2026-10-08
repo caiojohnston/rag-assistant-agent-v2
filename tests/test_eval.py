@@ -55,3 +55,21 @@ def test_gabarito_do_conjunto_b_calcula():
     assert saidas["B04"]["linhas"] == [["MG"], ["RJ"], ["RS"]]
     assert saidas["B11"]["tipo"] == "vazio"
     assert len(saidas["B02"]["linhas"]) == 3
+
+
+def test_empate_no_corte_do_top_n_aceita_qualquer_empatado():
+    g = {"tipo": "tabela", "ordenada": True, "linhas": [["A", 59.0], {"ou": [["B", 43.0], ["C", 43.0]]}]}
+    assert comparar(g, [], [{"n": "A", "v": 59}, {"n": "C", "v": 43}])[0]
+    assert comparar(g, [], [{"n": "A", "v": 59}, {"n": "B", "v": 43}])[0]
+    assert not comparar(g, [], [{"n": "A", "v": 59}, {"n": "D", "v": 40}])[0]
+
+
+def test_topn_marca_empate_no_ultimo_lugar():
+    import pandas as pd
+
+    from cristalux.eval.conjunto_b import _topn
+
+    g = _topn(pd.Series({"A": 59, "B": 43, "C": 43, "D": 10}), 3)
+    assert g["linhas"][0] == ["A", 59.0] and "ou" in g["linhas"][2]
+    sem_empate = _topn(pd.Series({"A": 59, "B": 43, "C": 40}), 3)
+    assert all(isinstance(l, list) for l in sem_empate["linhas"])

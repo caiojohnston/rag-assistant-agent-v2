@@ -52,14 +52,26 @@ def g01(b):
     return _escalar(b["c"][b["c"]["ano"] == 2022]["valor_total"].sum())
 
 
+def _topn(serie: pd.Series, n: int) -> dict:
+    """Top N ordenado. Se houver empate no valor do ultimo lugar, qualquer entidade empatada e aceita nessa posicao."""
+    ordenada = serie.sort_values(ascending=False)
+    corte = ordenada.iloc[n - 1]
+    empatadas = ordenada[ordenada == corte]
+    linhas = []
+    for nome, valor in ordenada.head(n).items():
+        if valor == corte and len(empatadas) > 1:
+            linhas.append({"ou": [[k, round(float(v), 2)] for k, v in empatadas.items()]})
+        else:
+            linhas.append([nome, round(float(valor), 2)])
+    return {"tipo": "tabela", "ordenada": True, "linhas": linhas}
+
+
 def g02(b):
-    t = b["c"].groupby("comprador")["valor_total"].sum().sort_values(ascending=False).head(3)
-    return _tabela(t.reset_index(), ordenada=True)
+    return _topn(b["c"].groupby("comprador")["valor_total"].sum(), 3)
 
 
 def g03(b):
-    t = b["c"].groupby("comprador")["quantidade"].sum().sort_values(ascending=False).head(3)
-    return _tabela(t.reset_index(), ordenada=True)
+    return _topn(b["c"].groupby("comprador")["quantidade"].sum(), 3)
 
 
 def g04(b):
@@ -74,8 +86,7 @@ def g05(b):
 
 
 def g06(b):
-    t = b["c"].groupby("vendedor")["valor_total"].sum().sort_values(ascending=False).head(1)
-    return _tabela(t.reset_index(), ordenada=True)
+    return _topn(b["c"].groupby("vendedor")["valor_total"].sum(), 1)
 
 
 def g07(b):
@@ -93,7 +104,8 @@ def g09(b):
 
 
 def g10(b):
-    t = b["c"][b["c"]["ano"] == 2022].groupby("ano_mes")["valor_total"].sum().reset_index()
+    # Confere os valores mensais; o rotulo do mes ("2022-02" ou "fevereiro") fica livre.
+    t = b["c"][b["c"]["ano"] == 2022].groupby("ano_mes")["valor_total"].sum().reset_index()[["valor_total"]]
     return _tabela(t)
 
 
@@ -102,8 +114,7 @@ def g11(b):
 
 
 def g12(b):
-    t = b["c"].groupby("uf")["valor_total"].sum().sort_values(ascending=False).head(1)
-    return _tabela(t.reset_index(), ordenada=True)
+    return _topn(b["c"].groupby("uf")["valor_total"].sum(), 1)
 
 
 def g13(b):

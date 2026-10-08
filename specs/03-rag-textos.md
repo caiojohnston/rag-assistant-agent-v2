@@ -23,7 +23,7 @@ O tamanho final é validado nos experimentos descritos em `06` e documentado no 
 
 ## Embeddings (RF-21)
 
-Decidido: `gemini-embedding-001` (free tier, multilíngue, mesma conta do LLM), contra o modelo local `paraphrase-multilingual-MiniLM-L12-v2` (fastembed, ONNX). No experimento (`reports/experimentos.md`) o Gemini acertou o primeiro resultado em 100% das perguntas contra 87% do local, e separou melhor as perguntas fora do corpus. O modelo local fica como alternativa sem rede. Consulta e documento usam `task_type` correspondente (`RETRIEVAL_QUERY` e `RETRIEVAL_DOCUMENT`).
+Decidido: `gemini-embedding-001` (free tier, multilíngue, mesma conta do LLM), contra o modelo local `paraphrase-multilingual-MiniLM-L12-v2` (fastembed, ONNX). No experimento (`reports/experimentos.md`) o Gemini acertou o primeiro resultado em 100% das perguntas contra 93% do local, e separou melhor as perguntas fora do corpus. O modelo local fica como alternativa sem rede. Consulta e documento usam `task_type` correspondente (`RETRIEVAL_QUERY` e `RETRIEVAL_DOCUMENT`).
 
 ## Retrieval (RF-22)
 
