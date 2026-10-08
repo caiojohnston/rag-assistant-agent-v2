@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "jupyter", "nbconvert", "nbformat", "ipykernel", "ragas>=0.2", "langchain-google-genai"]
+dev = ["pytest>=8", "matplotlib>=3.8", "jupyter", "nbconvert", "nbformat", "ipykernel", "ragas>=0.2", "langchain-google-genai"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -10,7 +10,7 @@ SELECT v.id_venda, v.data,
        v.id_vendedor, vd.nome AS vendedor,
        v.id_comprador, c.razao_social AS comprador,
        v.produto, v.categoria_produto AS categoria, v.quantidade, v.valor_unitario,
-       COALESCE(v.desconto, 0) AS desconto, v.valor_total, v.status, v.uf
+       COALESCE(v.desconto, 0) AS desconto, v.valor_total, v.valor_liquido, v.status, v.uf
 FROM clean.fato_venda v
 JOIN clean.dim_vendedor vd ON vd.id_vendedor = v.id_vendedor
 JOIN clean.dim_comprador c ON c.id_comprador = v.id_comprador;
@@ -21,6 +21,7 @@ SELECT * FROM clean.vw_vendas_todas WHERE status = 'concluida';
 CREATE VIEW clean.vw_faturamento_mensal_vendedor AS
 SELECT ano_mes, id_vendedor, vendedor,
        SUM(valor_total)::numeric(14,2)          AS faturamento,
+       SUM(valor_liquido)::numeric(14,2)        AS faturamento_liquido,
        COUNT(*)                                 AS qtd_vendas,
        (SUM(valor_total) / COUNT(*))::numeric(14,2) AS ticket_medio
 FROM clean.vw_vendas

@@ -80,9 +80,12 @@ def _interpretar(r: dict, alias_vendedor: dict, alias_comprador: dict) -> dict:
         flags.append("categoria_incoerente")
 
     valor_total_informado = p.parse_numero(r["valor_total"])
-    valor_total = None
+    valor_total = valor_liquido = None
     if quantidade and quantidade > 0 and valor_unitario and valor_unitario > 0:
-        valor_total = round(quantidade * valor_unitario * (1 - (desconto or 0.0)), 2)
+        # valor_total = quantidade x preco, como a origem reporta (confere em 87% das linhas, inclusive nas com
+        # desconto: a origem nao aplica o desconto no total). valor_liquido aplica o desconto, quando conhecido.
+        valor_total = round(quantidade * valor_unitario, 2)
+        valor_liquido = round(valor_total * (1 - (desconto or 0.0)), 2)
         if valor_total_informado is None or abs(valor_total - valor_total_informado) > 0.01:
             flags.append("valor_total_divergente")
 
@@ -91,15 +94,17 @@ def _interpretar(r: dict, alias_vendedor: dict, alias_comprador: dict) -> dict:
         "id_comprador": _id(r["id_comprador"], alias_comprador), "produto": produto,
         "produto_original": p.limpar(r["produto"]), "categoria": categoria, "categoria_produto": categoria_produto,
         "quantidade": quantidade, "valor_unitario": valor_unitario, "desconto": desconto,
-        "valor_total": valor_total, "valor_total_informado": valor_total_informado, "status": status, "uf": uf,
+        "valor_total": valor_total, "valor_liquido": valor_liquido, "valor_total_informado": valor_total_informado, "status": status, "uf": uf,
         "observacoes": p.limpar(r["observacoes"]), "flags": flags, "_motivos": motivos,
         "linha_origem": r["linha_origem"],
     }
 
 
 def limpar_vendas(raw: pd.DataFrame, vendedores_validos: set[str], compradores_validos: set[str],
-                  alias_vendedor: dict | None = None, alias_comprador: dict | None = None) -> Resultado:
+                  alias_vendedor: dict | None = None, alias_comprador: dict | None = None,
+                  admissoes: dict | None = None) -> Resultado:
     alias_vendedor, alias_comprador = alias_vendedor or {}, alias_comprador or {}
+    admissoes = admissoes or {}
     raw_por_linha = {x["linha_origem"]: x for x in raw.to_dict("records")}
 
     def rejeitada(linha_origem, motivo, sobrevivente=None):
@@ -128,6 +133,12 @@ def limpar_vendas(raw: pd.DataFrame, vendedores_validos: set[str], compradores_v
         elif c["id_comprador"] not in compradores_validos:
             c["_motivos"].append("comprador_inexistente")
 
+    # RN-19b: venda anterior a admissao do vendedor e sinalizada, nao descartada.
+    for c in candidatas:
+        adm = admissoes.get(c["id_vendedor"])
+        if adm is not None and c["data"] is not None and c["data"] < adm:
+            c["flags"].append("venda_antes_da_admissao")
+
     # RN-11: mesmo id_venda com conteudo diferente. Fica o registro valido, mais completo e mais recente.
     por_id: dict[str, list[dict]] = {}
     sem_id = []
@@ -153,7 +164,7 @@ def limpar_vendas(raw: pd.DataFrame, vendedores_validos: set[str], compradores_v
             ok.append({k: v for k, v in c.items() if k != "_motivos"})
 
     cols = ["id_venda", "data", "id_vendedor", "id_comprador", "produto", "produto_original", "categoria",
-            "categoria_produto", "quantidade", "valor_unitario", "desconto", "valor_total",
+            "categoria_produto", "quantidade", "valor_unitario", "desconto", "valor_total", "valor_liquido",
             "valor_total_informado", "status", "uf", "observacoes", "flags", "linha_origem"]
     clean = pd.DataFrame(ok, columns=cols).sort_values("id_venda").reset_index(drop=True)
     cols_rej = ["linha_origem", "motivo", "id_sobrevivente"] + [c for c in raw.columns if c != "linha_origem"]

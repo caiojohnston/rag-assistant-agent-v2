@@ -43,7 +43,9 @@ def limpar_tudo(data_dir: Path, ids_vendedor_extra=(), ids_comprador_extra=(), a
     res["vendas"] = limpar_vendas(
         raws["vendas"], vendedores, compradores,
         {**(alias_vendedor or {}), **res["vendedores"].stats["alias"]},
-        {**(alias_comprador or {}), **res["compradores"].stats["alias"]})
+        {**(alias_comprador or {}), **res["compradores"].stats["alias"]},
+        admissoes={r.id_vendedor: r.data_admissao for r in res["vendedores"].clean.itertuples()
+                   if pd.notna(r.data_admissao)})
     return raws, res
 
 

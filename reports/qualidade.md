@@ -70,8 +70,9 @@ Brutas: 190. Limpas: 96. Quarentena: 94.
 | comprador_ausente | 3 | 1.6% | Venda sem comprador nao entra em analises por cliente. |
 | id_venda_ausente | 1 | 0.5% | Venda sem identificador; nao ha como deduplicar. |
 | categoria_incoerente | 72 | 75.0% | Categoria da venda diferente da categoria natural do produto; analise por categoria nao e confiavel. |
-| valor_total_divergente | 42 | 43.8% | valor_total informado difere de quantidade x preco x desconto; usa-se o recalculado. |
 | desconto_indefinido | 26 | 27.1% | Desconto 'Sim' ou vazio sem percentual; margem real incerta. |
+| venda_antes_da_admissao | 25 | 26.0% | Venda anterior a data de admissao do vendedor; cadastro ou data da venda esta errado. |
+| valor_total_divergente | 12 | 12.5% | valor_total informado difere de quantidade x preco unitario; usa-se o recalculado. |
 | data_ambigua | 4 | 4.2% | Data com hifen que pode ser dd-mm ou mm-dd; risco de cair no mes errado. |
 | grafias_diferentes:regiao | 35 |  | O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (35 grafias para 8 valores reais). |
 | grafias_diferentes:status | 14 |  | O mesmo valor aparece escrito de varias formas; agrupamentos por esse campo ficariam fragmentados (14 grafias para 4 valores reais). |

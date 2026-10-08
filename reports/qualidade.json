@@ -303,17 +303,24 @@
           "detalhe": "sobre linhas que permaneceram na base limpa"
         },
         {
-          "tipo": "valor_total_divergente",
-          "volume": 42,
-          "percentual": 43.8,
-          "impacto": "valor_total informado difere de quantidade x preco x desconto; usa-se o recalculado.",
-          "detalhe": "sobre linhas que permaneceram na base limpa"
-        },
-        {
           "tipo": "desconto_indefinido",
           "volume": 26,
           "percentual": 27.1,
           "impacto": "Desconto 'Sim' ou vazio sem percentual; margem real incerta.",
+          "detalhe": "sobre linhas que permaneceram na base limpa"
+        },
+        {
+          "tipo": "venda_antes_da_admissao",
+          "volume": 25,
+          "percentual": 26.0,
+          "impacto": "Venda anterior a data de admissao do vendedor; cadastro ou data da venda esta errado.",
+          "detalhe": "sobre linhas que permaneceram na base limpa"
+        },
+        {
+          "tipo": "valor_total_divergente",
+          "volume": 12,
+          "percentual": 12.5,
+          "impacto": "valor_total informado difere de quantidade x preco unitario; usa-se o recalculado.",
           "detalhe": "sobre linhas que permaneceram na base limpa"
         },
         {

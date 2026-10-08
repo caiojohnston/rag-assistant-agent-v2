@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS clean.fato_venda (
     valor_unitario         numeric(12,2) NOT NULL CHECK (valor_unitario > 0),
     desconto               numeric(5,4),
     valor_total            numeric(14,2) NOT NULL,
+    valor_liquido          numeric(14,2) NOT NULL,
     valor_total_informado  numeric(14,2),
     status                 text NOT NULL CHECK (status IN ('concluida','cancelada','devolvida','pendente')),
     uf                     char(2),

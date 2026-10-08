@@ -106,7 +106,7 @@ COLUNAS = {
                             "email", "data_cadastro", "limite_credito", "status", "flags"],
     "clean.fato_venda": ["id_venda", "data", "id_vendedor", "id_comprador", "produto", "produto_original",
                          "categoria", "categoria_produto", "quantidade", "valor_unitario", "desconto", "valor_total",
-                         "valor_total_informado", "status", "uf", "observacoes", "flags", "linha_origem"],
+                         "valor_liquido", "valor_total_informado", "status", "uf", "observacoes", "flags", "linha_origem"],
     "clean.estoque": ["id_produto", "nome_produto", "categoria", "estoque_atual", "estoque_minimo",
                       "ultima_reposicao", "lead_time_dias", "fornecedor", "custo_unitario", "localizacao_deposito",
                       "status", "flags"],
