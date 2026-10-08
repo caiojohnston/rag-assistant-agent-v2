@@ -52,8 +52,8 @@ def status_conexoes() -> dict:
     try:
         from cristalux.rag.embeddings import backend_padrao
         from cristalux.rag.store import colecao
-        b = backend_padrao()
-        out["Chroma"] = f"ok ({colecao(b).count()} trechos, embeddings {b})"
+        contagens = {nome: colecao(nome).count() for nome in dict.fromkeys([backend_padrao(), "local"])}
+        out["Chroma"] = "ok (" + ", ".join(f"{n}: {c} trechos" for n, c in contagens.items()) + ")"
     except Exception as e:
         out["Chroma"] = f"indisponível ({type(e).__name__})"
     out["Gemini"] = "chave configurada" if settings.gemini_api_key else "sem chave (GEMINI_API_KEY)"

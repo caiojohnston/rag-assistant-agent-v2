@@ -122,7 +122,7 @@ Comparei com um modelo local multilíngue (`paraphrase-multilingual-MiniLM-L12-v
 | gemini-embedding-001 | 100% | 100% | 1,00 | 0,746 | 0,671 |
 | MiniLM multilíngue local | 93% | 100% | 0,97 | 0,564 | 0,467 |
 
-O Gemini acertou o primeiro resultado em todas as perguntas, é multilíngue, é gratuito na mesma conta do LLM e dá margem maior entre o que é relevante e o que não é (o local também vai bem, e por isso fica como alternativa). O modelo local fica como alternativa para rodar sem rede (`EMBEDDING_BACKEND=local`).
+O Gemini acertou o primeiro resultado em todas as perguntas, é multilíngue, é gratuito na mesma conta do LLM e dá margem maior entre o que é relevante e o que não é (o local também vai bem, e por isso fica como alternativa). O modelo local fica como alternativa para rodar sem rede (`EMBEDDING_BACKEND=local`) e como reserva automática: a cota diária de embeddings do Gemini também acaba (aconteceu durante as avaliações), e então o sistema passa para o modelo local, que é mantido indexado em paralelo e já vem embutido na imagem Docker. A busca troca de coleção e de threshold junto (0,50 para o local).
 
 ### Tamanho do chunk: uma decisão por chunk
 
@@ -317,7 +317,7 @@ Resultado: **13 de 14 (93%)**; números fiéis 14/14; SQL válido em todas; 1,0 
 
 A **primeira execução teve 11 de 14 (79%)**. Dois dos três erros eram do gabarito, não do sistema, e foram corrigidos e registrados em [specs/99-registro-de-mudancas.md](specs/99-registro-de-mudancas.md): B03 tinha um empate de 43 unidades no terceiro lugar entre dois compradores e o gabarito aceitava só um; B10 exigia o rótulo "2022-02" quando o SQL devolveu "mês 2" com os valores certos. A falha que ficou é real:
 
-**B04 falhou nas duas execuções.** "Quais regiões tiveram queda de vendas em 2023 em relação a 2022?" tem como resposta MG, RJ e RS: RJ e RS tinham venda em 2022 e nenhuma em 2023. O sistema devolveu os faturamentos por UF e ano e respondeu que só MG caiu, porque "as demais regiões não possuem dados em ambos os anos". Ou seja, não tratou a ausência de venda como faturamento zero. O exemplo do prompt do subagente já diz isso, e o `gemini-3.5-flash` acertou a mesma pergunta antes. É um erro de interpretação de um modelo menor e o validador não pega, porque o SQL é válido. O que mitiga é o SQL e as premissas ficarem visíveis na resposta.
+**B04 falhou nas duas execuções.** "Quais regiões tiveram queda de vendas em 2023 em relação a 2022?" tem como resposta MG, RJ e RS: RJ e RS tinham venda em 2022 e nenhuma em 2023. O sistema devolveu os faturamentos por UF e ano e respondeu que só MG caiu, porque "as demais regiões não possuem dados em ambos os anos". Ou seja, não tratou a ausência de venda como faturamento zero. O exemplo do prompt do subagente já diz isso, e o `gemini-3.5-flash` acertou a mesma pergunta antes. É um erro de interpretação de um modelo menor e o validador não pega, porque o SQL é válido. O comportamento é instável, não determinístico: a mesma pergunta, feita depois pela interface, foi respondida corretamente (MG, RJ e RS). O que mitiga é o SQL e as premissas ficarem visíveis na resposta.
 
 | Caso | Pergunta | Resultado confere | Números fiéis | Observação |
 |---|---|---|---|---|
