@@ -1,4 +1,5 @@
 """Interface Streamlit do assistente de dados."""
+import hmac
 import json
 import uuid
 
@@ -10,6 +11,23 @@ from cristalux.agent.orquestrador import Evento, responder
 from cristalux.config import settings
 
 st.set_page_config(page_title="Assistente de dados", layout="wide")
+
+
+def exigir_senha() -> None:
+    """Portao simples: com APP_PASSWORD definida, nada do app aparece antes da senha correta."""
+    if not settings.app_password or st.session_state.get("autenticado"):
+        return
+    st.title("Assistente de dados")
+    senha = st.text_input("Senha de acesso", type="password")
+    if senha:
+        if hmac.compare_digest(senha, settings.app_password):
+            st.session_state.autenticado = True
+            st.rerun()
+        st.error("Senha incorreta.")
+    st.stop()
+
+
+exigir_senha()
 
 EXEMPLOS = [
     "Quais regiões tiveram queda de vendas em 2023?",

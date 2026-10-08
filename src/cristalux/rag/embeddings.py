@@ -85,8 +85,8 @@ class HashEmbedder:
         return self._vec(texto)
 
 
-# Threshold de similaridade (cosseno) por backend. Valores iniciais, calibrados na avaliacao (spec 03/06).
-THRESHOLD_PADRAO = {"gemini": 0.55, "local": 0.35, "hash": 0.2}
+# Threshold de similaridade (cosseno) por backend. Calibrados em reports/experimentos.md (varredura de threshold, spec 06).
+THRESHOLD_PADRAO = {"gemini": 0.70, "local": 0.50, "hash": 0.2}
 
 
 def backend_padrao() -> str:

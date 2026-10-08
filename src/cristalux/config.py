@@ -20,6 +20,17 @@ def _raiz() -> Path:
 ROOT = _raiz()
 
 
+def _url_do_agente(database_url: str, senha: str) -> str:
+    """URL do papel somente leitura. AGENT_DATABASE_URL, se definida; senao deriva da DATABASE_URL (Railway)."""
+    if os.getenv("AGENT_DATABASE_URL"):
+        return os.environ["AGENT_DATABASE_URL"]
+    from urllib.parse import quote, urlsplit, urlunsplit
+
+    u = urlsplit(database_url)
+    porta = f":{u.port}" if u.port else ""
+    return urlunsplit((u.scheme, f"cristalux_agent_ro:{quote(senha, safe='')}@{u.hostname}{porta}", u.path, u.query, ""))
+
+
 def _path(name: str, default: str) -> Path:
     p = Path(os.getenv(name, default))
     return p if p.is_absolute() else ROOT / p
@@ -28,12 +39,14 @@ def _path(name: str, default: str) -> Path:
 @dataclass(frozen=True)
 class Settings:
     database_url: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cristalux")
-    agent_database_url: str = os.getenv(
-        "AGENT_DATABASE_URL", "postgresql://cristalux_agent_ro:agent_ro_local@localhost:5432/cristalux"
-    )
     agent_db_password: str = os.getenv("AGENT_DB_PASSWORD", "agent_ro_local")
+    agent_database_url: str = _url_do_agente(
+        os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/cristalux"),
+        os.getenv("AGENT_DB_PASSWORD", "agent_ro_local"))
+    # Senha de acesso ao app. Vazia = sem protecao (so para uso local).
+    app_password: str = os.getenv("APP_PASSWORD", "")
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
     gemini_embedding_model: str = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     langfuse_host: str = os.getenv("LANGFUSE_BASE_URL") or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
     langfuse_public_key: str = os.getenv("LANGFUSE_PUBLIC_KEY", "")
