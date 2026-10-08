@@ -17,6 +17,24 @@ class LLMIndisponivel(RuntimeError):
     pass
 
 
+class CotaDiariaEsgotada(RuntimeError):
+    """429 com espera longa: a cota diaria do free tier acabou. Repetir em segundos nao adianta."""
+
+
+def _espera_sugerida(erro) -> float | None:
+    """Segundos que a API pede para esperar (campo retryDelay), quando informado."""
+    import re
+
+    m = re.search(r"retryDelay'?\"?: '?\"?(\d+(?:\.\d+)?)s", str(erro)) or re.search(r"retry in (?:(\d+)h)?(?:(\d+)m)?(\d+(?:\.\d+)?)s", str(erro))
+    if not m:
+        return None
+    partes = [float(g) for g in m.groups() if g]
+    if len(m.groups()) == 3:  # formato "7h31m19s"
+        h, mi, s = (float(g) if g else 0.0 for g in m.groups())
+        return h * 3600 + mi * 60 + s
+    return partes[0]
+
+
 def cliente():
     global _cliente
     if _cliente is None:
@@ -39,7 +57,10 @@ def com_repeticao(fn, tentativas: int = 5):
             codigo = getattr(e, "code", None)
             if codigo not in (429, 500, 502, 503, 504) or i == tentativas - 1:
                 raise
-            time.sleep(espera)
+            sugerida = _espera_sugerida(e) if codigo == 429 else None
+            if sugerida and sugerida > 120:
+                raise CotaDiariaEsgotada(f"cota do modelo esgotada; a API pede {int(sugerida // 60)} min de espera") from e
+            time.sleep(max(espera, sugerida or 0))
             espera = min(espera * 2, 60)
 
 

@@ -16,6 +16,7 @@ from cristalux.agent.orquestrador import responder
 from cristalux.config import settings
 from cristalux.eval import conjunto_b
 from cristalux.eval.comparar import comparar
+from cristalux.llm import CotaDiariaEsgotada
 from cristalux.rag.answer import NAO_ENCONTRADO, responder_rag
 
 DATASETS = Path(__file__).parent / "datasets"
@@ -66,10 +67,15 @@ def numeros_fieis(texto: str, tabelas: list[dict]) -> tuple[bool, list[float]]:
 def rodar_a(pausa: float, run_id: str) -> dict:
     from cristalux.eval import ragas_eval
 
-    casos, amostras = [], []
+    casos, amostras, interrompido = [], [], False
     for c in _ler("conjunto_a.jsonl"):
-        with obs.contexto(session_id=run_id, tags=["eval", "set-A"], metadata={"caso": c["id"]}):
-            r = responder_rag(c["pergunta"])
+        try:
+            with obs.contexto(session_id=run_id, tags=["eval", "set-A"], metadata={"caso": c["id"]}):
+                r = responder_rag(c["pergunta"])
+        except CotaDiariaEsgotada as e:
+            print(f"A interrompido em {c['id']}: {e}")
+            interrompido = True
+            break
         ids = [t.id for t in r["trechos"]]
         esperados = c["ids_esperados"]
         if esperados:
@@ -110,15 +116,19 @@ def rodar_a(pausa: float, run_id: str) -> dict:
     return {"casos": casos, "resumo": {
         "hit_at_k": round(sum(c["hit_at_k"] for c in com_hit) / len(com_hit), 3) if com_hit else None,
         "recusa_correta": round(sum(c["recusa_correta"] for c in com_recusa) / len(com_recusa), 3) if com_recusa else None,
-        "ragas": medias or "indisponivel", "n": len(casos)}}
+        "ragas": medias or "indisponivel", "n": len(casos), "interrompido": interrompido}}
 
 
 def rodar_b(pausa: float, run_id: str) -> dict:
     base = conjunto_b.carregar_base()
-    casos = []
+    casos, interrompido = [], False
     for c in conjunto_b.CASOS:
         gab = c.gabarito(base)
         r = responder(c.pergunta, session_id=run_id, tags=["eval", "set-B"])
+        if r.erro and "CotaDiariaEsgotada" in r.erro:
+            print(f"B interrompido em {c.id}: {r.erro}")
+            interrompido = True
+            break
         sqls = [f for f in r.fontes if f["tipo"] == "sql"]
         tab = r.tabelas[0] if r.tabelas else {"colunas": [], "linhas": [], "total_linhas": 0}
         ok, detalhe = comparar(gab, tab["colunas"], tab["linhas"]) if sqls else (False, "tool de SQL nao foi usada")
@@ -134,8 +144,9 @@ def rodar_b(pausa: float, run_id: str) -> dict:
         obs.pontuar(r.trace_id, "numeros_fieis", float(fiel), c.id, "NUMERIC")
         time.sleep(pausa)
     obs.descarregar()
-    n = len(casos)
+    n = max(len(casos), 1)
     return {"casos": casos, "resumo": {
+        "interrompido": interrompido, "executados": len(casos),
         "execution_accuracy": round(sum(c["execution_accuracy"] for c in casos) / n, 3),
         "numeros_fieis": round(sum(c["numeros_fieis"] for c in casos) / n, 3),
         "sql_valido": round(sum(c["sql_valido"] for c in casos) / n, 3),
@@ -143,9 +154,13 @@ def rodar_b(pausa: float, run_id: str) -> dict:
 
 
 def rodar_c(pausa: float, run_id: str) -> dict:
-    casos = []
+    casos, interrompido = [], False
     for c in _ler("conjunto_c.jsonl"):
         r = responder(c["pergunta"], session_id=run_id, tags=["eval", "set-C"])
+        if r.erro and "CotaDiariaEsgotada" in r.erro:
+            print(f"C interrompido em {c['id']}: {r.erro}")
+            interrompido = True
+            break
         texto = r.texto.lower()
         usadas = [e.dados["nome"] for e in r.eventos if e.tipo == "tool_chamada"]
         falhas = []
@@ -162,8 +177,8 @@ def rodar_c(pausa: float, run_id: str) -> dict:
         obs.pontuar(r.trace_id, "adversarial_passou", float(not falhas), c["id"], "NUMERIC")
         time.sleep(pausa)
     obs.descarregar()
-    return {"casos": casos, "resumo": {"aprovacao": round(sum(c["passou"] for c in casos) / len(casos), 3),
-                                       "n": len(casos)}}
+    return {"casos": casos, "resumo": {"aprovacao": round(sum(c["passou"] for c in casos) / max(len(casos), 1), 3),
+                                       "n": len(casos), "interrompido": interrompido}}
 
 
 def _md(rel: dict) -> str:
