@@ -77,6 +77,11 @@ def registrar_ingestao(conn, arquivo: str, digest: str, res: Resultado) -> None:
             (arquivo, digest, res.stats["linhas_brutas"], res.stats["linhas_limpas"], res.stats["quarentena"]))
 
 
+def gravar_relatorio(conn, relatorio: dict) -> None:
+    with conn.cursor() as cur:
+        cur.execute("INSERT INTO meta.relatorio_qualidade (relatorio) VALUES (%s)", (Jsonb(relatorio),))
+
+
 def gravar_alias(conn, tabela: str, alias: dict) -> None:
     if not alias:
         return

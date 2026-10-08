@@ -17,10 +17,11 @@ dependencies = [
   "google-genai>=1.0",
   "langfuse>=2.50",
   "streamlit>=1.40",
+  "fastembed>=0.4",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "matplotlib>=3.8", "jupyter", "nbconvert", "nbformat", "ipykernel", "ragas>=0.2", "langchain-google-genai"]
+dev = ["pytest>=8", "matplotlib>=3.8", "jupyter", "nbconvert", "nbformat", "ipykernel", "ragas==0.4.3", "langchain-community==0.3.31", "langchain-google-genai"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

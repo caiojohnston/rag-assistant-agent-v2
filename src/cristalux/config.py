@@ -9,7 +9,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-ROOT = Path(__file__).resolve().parents[2]
+def _raiz() -> Path:
+    """Raiz do projeto: APP_ROOT (Docker), a pasta do repositorio (instalacao editavel) ou o diretorio atual."""
+    if os.getenv("APP_ROOT"):
+        return Path(os.environ["APP_ROOT"])
+    candidata = Path(__file__).resolve().parents[2]
+    return candidata if (candidata / "sql").exists() else Path.cwd()
+
+
+ROOT = _raiz()
 
 
 def _path(name: str, default: str) -> Path:

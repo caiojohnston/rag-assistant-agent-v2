@@ -39,7 +39,7 @@ def _conceder(cur) -> None:
     cur.execute(sql.SQL(f"GRANT USAGE ON SCHEMA clean, meta TO {PAPEL_AGENTE}"))
     for view in VIEWS:
         cur.execute(sql.SQL(f"GRANT SELECT ON clean.{{}} TO {PAPEL_AGENTE}").format(sql.Identifier(view)))
-    cur.execute(sql.SQL(f"GRANT SELECT ON meta.dicionario TO {PAPEL_AGENTE}"))
+    cur.execute(sql.SQL(f"GRANT SELECT ON meta.dicionario, meta.relatorio_qualidade TO {PAPEL_AGENTE}"))
 
 
 def _dicionario(cur) -> None:

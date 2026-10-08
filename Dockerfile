@@ -1,6 +1,7 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV APP_ROOT=/app \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
@@ -12,7 +13,11 @@ RUN pip install .
 
 COPY app ./app
 COPY sql ./sql
+COPY specs ./specs
 COPY notebooks ./notebooks
+COPY docker/entrypoint.sh ./docker/entrypoint.sh
+RUN sed -i 's/\r$//' docker/entrypoint.sh && chmod +x docker/entrypoint.sh
 
 # Railway injeta PORT; localmente o padrao e 8501.
-CMD ["sh", "-c", "streamlit run app/streamlit_app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --server.headless=true"]
+EXPOSE 8501
+CMD ["./docker/entrypoint.sh"]

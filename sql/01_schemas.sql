@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS meta.ingest_log (
     UNIQUE (arquivo, sha256)
 );
 
+CREATE TABLE IF NOT EXISTS meta.relatorio_qualidade (
+    id           serial PRIMARY KEY,
+    gerado_em    timestamptz NOT NULL DEFAULT now(),
+    relatorio    jsonb       NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS meta.dicionario (
     objeto    text NOT NULL,
     coluna    text NOT NULL DEFAULT '',

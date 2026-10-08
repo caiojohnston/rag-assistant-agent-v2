@@ -19,6 +19,7 @@ services:
 
   app:
     build: .
+    image: cristalux-app
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cristalux}
@@ -36,7 +37,7 @@ services:
   # Job de carga: limpa os CSV, grava no Postgres e indexa os textos.
   # Uso: docker compose --profile jobs run --rm etl
   etl:
-    build: .
+    image: cristalux-app
     profiles: ["jobs"]
     env_file: .env
     environment:

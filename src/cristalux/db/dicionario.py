@@ -74,13 +74,14 @@ VIEWS["vw_vendas_todas"]["colunas"] = {**VIEWS["vw_vendas"]["colunas"],
                                        "status": "concluida, cancelada, devolvida ou pendente"}
 
 AMOSTRAS_PERGUNTA_SQL = [
-    ("Quais os 3 maiores compradores por faturamento?",
-     "SELECT comprador, SUM(valor_total) AS faturamento FROM vw_vendas GROUP BY comprador ORDER BY faturamento DESC LIMIT 3"),
-    ("Quais UFs tiveram queda de faturamento em 2023 em relacao a 2022?",
-     "SELECT a.uf, b.faturamento AS fat_2022, a.faturamento AS fat_2023 FROM vw_faturamento_uf_ano a "
-     "JOIN vw_faturamento_uf_ano b ON a.uf = b.uf AND b.ano = 2022 WHERE a.ano = 2023 AND a.faturamento < b.faturamento"),
-    ("Quantas vendas foram canceladas por ano?",
-     "SELECT ano, COUNT(*) AS cancelamentos FROM vw_vendas_todas WHERE status = 'cancelada' GROUP BY ano ORDER BY ano"),
+    ("Quais os 5 vendedores que mais venderam em unidades?",
+     "SELECT vendedor, SUM(quantidade) AS unidades FROM vw_vendas GROUP BY vendedor ORDER BY unidades DESC LIMIT 5"),
+    ("Quais UFs tiveram queda de faturamento de 2021 para 2022? (UF sem venda no segundo ano conta como faturamento zero)",
+     "SELECT b.uf, b.faturamento AS fat_2021, COALESCE(a.faturamento, 0) AS fat_2022 FROM vw_faturamento_uf_ano b "
+     "LEFT JOIN vw_faturamento_uf_ano a ON a.uf = b.uf AND a.ano = 2022 "
+     "WHERE b.ano = 2021 AND COALESCE(a.faturamento, 0) < b.faturamento ORDER BY b.uf"),
+    ("Quantas devolucoes houve por UF?",
+     "SELECT uf, COUNT(*) AS devolucoes FROM vw_vendas_todas WHERE status = 'devolvida' GROUP BY uf ORDER BY devolucoes DESC"),
 ]
 
 

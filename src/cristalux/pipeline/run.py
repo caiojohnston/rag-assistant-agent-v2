@@ -86,23 +86,27 @@ def relatorio_qualidade(raws: dict, res: dict) -> dict:
     return gerar_relatorio(perfis)
 
 
-def executar(data_dir: Path | None = None, force: bool = False, com_banco: bool = True) -> dict:
+def executar(data_dir: Path | None = None, force: bool = False, com_banco: bool = True,
+             url: str | None = None, reports_dir: Path | None = None) -> dict:
     data_dir = data_dir or settings.data_dir
+    reports_dir = reports_dir or settings.reports_dir
     if not com_banco:
         raws, res = limpar_tudo(data_dir)
         rel = relatorio_qualidade(raws, res)
-        salvar(rel, settings.reports_dir)
+        salvar(rel, reports_dir)
         return rel
 
-    setup()
-    with conectar() as conn:
+    setup(url)
+    with conectar(url) as conn:
         raws, res = limpar_tudo(
             data_dir,
             ids_vendedor_extra=load.ids_existentes(conn, "clean.dim_vendedor", "id_vendedor"),
             ids_comprador_extra=load.ids_existentes(conn, "clean.dim_comprador", "id_comprador"),
             alias_vendedor=load.aliases(conn, "clean.dim_vendedor_alias"),
             alias_comprador=load.aliases(conn, "clean.dim_comprador_alias"))
-        salvar(relatorio_qualidade(raws, res), settings.reports_dir)
+        rel = relatorio_qualidade(raws, res)
+        salvar(rel, reports_dir)
+        load.gravar_relatorio(conn, rel)
 
         # Dimensoes antes dos fatos por causa das chaves estrangeiras.
         etapas = [
