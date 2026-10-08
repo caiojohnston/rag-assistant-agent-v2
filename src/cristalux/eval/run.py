@@ -11,6 +11,7 @@ import re
 import time
 from pathlib import Path
 
+from cristalux import obs
 from cristalux.agent.orquestrador import responder
 from cristalux.config import settings
 from cristalux.eval import conjunto_b
@@ -62,12 +63,13 @@ def numeros_fieis(texto: str, tabelas: list[dict]) -> tuple[bool, list[float]]:
     return not soltos, soltos
 
 
-def rodar_a(pausa: float) -> dict:
+def rodar_a(pausa: float, run_id: str) -> dict:
     from cristalux.eval import ragas_eval
 
     casos, amostras = [], []
     for c in _ler("conjunto_a.jsonl"):
-        r = responder_rag(c["pergunta"])
+        with obs.contexto(session_id=run_id, tags=["eval", "set-A"], metadata={"caso": c["id"]}):
+            r = responder_rag(c["pergunta"])
         ids = [t.id for t in r["trechos"]]
         esperados = c["ids_esperados"]
         if esperados:
@@ -81,6 +83,11 @@ def rodar_a(pausa: float) -> dict:
         if c["tipo"] == "injection_d013":
             from cristalux.security.verificador import vazou
             caso["repetiu_injection"] = bool(vazou(r["resposta"]))
+        caso["trace_id"] = r.get("trace_id")
+        if hit is not None:
+            obs.pontuar(caso["trace_id"], "hit_at_k", float(hit), c["id"], "NUMERIC")
+        if ok_recusa is not None:
+            obs.pontuar(caso["trace_id"], "recusa_correta", float(ok_recusa), c["id"], "NUMERIC")
         casos.append(caso)
         if esperados and r["trechos"]:
             amostras.append({"id": c["id"], "pergunta": c["pergunta"], "resposta": r["resposta"],
@@ -89,6 +96,10 @@ def rodar_a(pausa: float) -> dict:
     ragas = ragas_eval.avaliar(amostras)
     for c in casos:
         c["ragas"] = (ragas or {}).get(c["id"])
+        for metrica, nota in (c["ragas"] or {}).items():
+            if nota is not None:
+                obs.pontuar(c.get("trace_id"), f"ragas_{metrica}", float(nota), c["id"], "NUMERIC")
+    obs.descarregar()
     com_hit = [c for c in casos if c["hit_at_k"] is not None]
     com_recusa = [c for c in casos if c["recusa_correta"] is not None]
     medias = {}
@@ -102,12 +113,12 @@ def rodar_a(pausa: float) -> dict:
         "ragas": medias or "indisponivel", "n": len(casos)}}
 
 
-def rodar_b(pausa: float) -> dict:
+def rodar_b(pausa: float, run_id: str) -> dict:
     base = conjunto_b.carregar_base()
     casos = []
     for c in conjunto_b.CASOS:
         gab = c.gabarito(base)
-        r = responder(c.pergunta)
+        r = responder(c.pergunta, session_id=run_id, tags=["eval", "set-B"])
         sqls = [f for f in r.fontes if f["tipo"] == "sql"]
         tab = r.tabelas[0] if r.tabelas else {"colunas": [], "linhas": [], "total_linhas": 0}
         ok, detalhe = comparar(gab, tab["colunas"], tab["linhas"]) if sqls else (False, "tool de SQL nao foi usada")
@@ -119,7 +130,10 @@ def rodar_b(pausa: float) -> dict:
                       "resposta": r.texto, "numeros_fieis": fiel, "numeros_soltos": soltos,
                       "sql_valido": bool(validados and validados[-1]), "tentativas_sql": max(tentativas) if tentativas else 0,
                       "gabarito": gab, "trace_url": r.trace_url})
+        obs.pontuar(r.trace_id, "execution_accuracy", float(ok), c.id, "NUMERIC")
+        obs.pontuar(r.trace_id, "numeros_fieis", float(fiel), c.id, "NUMERIC")
         time.sleep(pausa)
+    obs.descarregar()
     n = len(casos)
     return {"casos": casos, "resumo": {
         "execution_accuracy": round(sum(c["execution_accuracy"] for c in casos) / n, 3),
@@ -128,10 +142,10 @@ def rodar_b(pausa: float) -> dict:
         "tentativas_medias": round(sum(c["tentativas_sql"] for c in casos) / n, 2), "n": n}}
 
 
-def rodar_c(pausa: float) -> dict:
+def rodar_c(pausa: float, run_id: str) -> dict:
     casos = []
     for c in _ler("conjunto_c.jsonl"):
-        r = responder(c["pergunta"])
+        r = responder(c["pergunta"], session_id=run_id, tags=["eval", "set-C"])
         texto = r.texto.lower()
         usadas = [e.dados["nome"] for e in r.eventos if e.tipo == "tool_chamada"]
         falhas = []
@@ -145,7 +159,9 @@ def rodar_c(pausa: float) -> dict:
                 falhas.append(f"contem '{s}'")
         casos.append({"id": c["id"], "pergunta": c["pergunta"], "descricao": c["descricao"], "resposta": r.texto,
                       "tools_usadas": usadas, "passou": not falhas, "falhas": falhas, "trace_url": r.trace_url})
+        obs.pontuar(r.trace_id, "adversarial_passou", float(not falhas), c["id"], "NUMERIC")
         time.sleep(pausa)
+    obs.descarregar()
     return {"casos": casos, "resumo": {"aprovacao": round(sum(c["passou"] for c in casos) / len(casos), 3),
                                        "n": len(casos)}}
 
@@ -185,12 +201,14 @@ def main() -> None:
 
     rel = {"executado_em": dt.datetime.now().strftime("%Y-%m-%d %H:%M"), "modelo": settings.gemini_model,
            "embeddings": backend_padrao()}
+    run_id = f"eval-{dt.datetime.now():%Y%m%d-%H%M}"
+    rel["run_id"] = run_id
     if a.set in ("A", "all"):
-        rel["A"] = rodar_a(a.pausa)
+        rel["A"] = rodar_a(a.pausa, run_id)
     if a.set in ("B", "all"):
-        rel["B"] = rodar_b(a.pausa)
+        rel["B"] = rodar_b(a.pausa, run_id)
     if a.set in ("C", "all"):
-        rel["C"] = rodar_c(a.pausa)
+        rel["C"] = rodar_c(a.pausa, run_id)
     settings.reports_dir.mkdir(parents=True, exist_ok=True)
     nome = f"eval_{dt.datetime.now():%Y%m%d_%H%M}"
     (settings.reports_dir / f"{nome}.json").write_text(json.dumps(rel, ensure_ascii=False, indent=2, default=str), encoding="utf-8")

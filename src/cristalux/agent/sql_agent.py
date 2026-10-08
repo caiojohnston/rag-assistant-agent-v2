@@ -61,36 +61,48 @@ def _pedir_sql(pergunta: str, erro_anterior: str | None, sql_anterior: str | Non
     if erro_anterior:
         prompt += (f"\nSua tentativa anterior falhou.\nSQL anterior: {sql_anterior}\nErro: {erro_anterior}\n"
                    "Corrija e devolva o JSON novamente.")
-    bruto = gerar_texto(prompt, system=SYSTEM, json_mode=True)
+    bruto = gerar_texto(prompt, system=SYSTEM, json_mode=True,
+                       nome="generate-sql" if not erro_anterior else "fix-sql")
     try:
         return json.loads(bruto)
     except json.JSONDecodeError:
         return {"sql": "", "premissas": ""}
 
 
-@obs.observar(name="sql_agent", as_type="agent")
+@obs.observar(name="generate-and-run-sql", as_type="agent")
 def consultar(pergunta: str, emitir=lambda *a, **k: None) -> dict:
     """Devolve {sql, premissas, colunas, linhas, total_linhas, truncado, tentativas, erro}."""
+    obs.atualizar(input=pergunta)
     erro, sql_anterior, premissas = None, None, ""
     for tentativa in range(1, MAX_TENTATIVAS + 1):
         resposta = _pedir_sql(pergunta, erro, sql_anterior)
         sql, premissas = resposta.get("sql", ""), resposta.get("premissas", "")
         emitir("sql_gerado", "SQL gerado", {"sql": sql, "premissas": premissas, "tentativa": tentativa})
-        v = validar(sql)
+        with obs.observacao("validate-sql", "guardrail", input=sql, metadata={"tentativa": tentativa}) as span:
+            v = validar(sql)
+            span.update(output={"ok": v.ok, "motivo": v.motivo, "sql_normalizado": v.sql},
+                        level="DEFAULT" if v.ok else "WARNING", status_message=v.motivo or None)
         emitir("sql_validado", "Validacao do SQL", {"ok": v.ok, "motivo": v.motivo, "sql": v.sql})
         if not v.ok:
             erro, sql_anterior = f"validacao: {v.motivo}", sql
             continue
         try:
-            colunas, linhas = executar_sql(v.sql)
+            with obs.observacao("execute-sql", "tool", input=v.sql, metadata={"papel": "somente leitura"}) as span:
+                colunas, linhas = executar_sql(v.sql)
+                span.update(output={"colunas": colunas, "total_linhas": len(linhas),
+                                    "linhas": linhas[:MAX_LINHAS_PARA_O_MODELO]})
         except psycopg.Error as e:
             erro, sql_anterior = f"execucao: {str(e).splitlines()[0][:200]}", v.sql
             emitir("sql_erro", "Erro na execucao", {"erro": erro})
             continue
         truncado = len(linhas) > MAX_LINHAS_PARA_O_MODELO
         emitir("sql_resultado", "Linhas devolvidas", {"total": len(linhas), "colunas": colunas})
-        return {"sql": v.sql, "premissas": premissas, "colunas": colunas,
-                "linhas": linhas[:MAX_LINHAS_PARA_O_MODELO], "total_linhas": len(linhas),
-                "truncado": truncado, "tentativas": tentativa, "erro": None}
-    return {"sql": sql_anterior or "", "premissas": premissas, "colunas": [], "linhas": [], "total_linhas": 0,
-            "truncado": False, "tentativas": MAX_TENTATIVAS, "erro": erro}
+        resultado = {"sql": v.sql, "premissas": premissas, "colunas": colunas,
+                     "linhas": linhas[:MAX_LINHAS_PARA_O_MODELO], "total_linhas": len(linhas),
+                     "truncado": truncado, "tentativas": tentativa, "erro": None}
+        obs.atualizar(output=resultado, metadata={"tentativas": tentativa})
+        return resultado
+    resultado = {"sql": sql_anterior or "", "premissas": premissas, "colunas": [], "linhas": [], "total_linhas": 0,
+                 "truncado": False, "tentativas": MAX_TENTATIVAS, "erro": erro}
+    obs.atualizar(output=resultado, level="ERROR", status_message=erro)
+    return resultado

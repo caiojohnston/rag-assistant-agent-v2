@@ -6,6 +6,7 @@ import math
 import re
 from typing import Protocol
 
+from cristalux import obs
 from cristalux.config import settings
 
 
@@ -36,10 +37,14 @@ class GeminiEmbedder:
         return saida
 
     def embed_documents(self, textos):
-        return self._embed(textos, "RETRIEVAL_DOCUMENT")
+        with obs.observacao("embed-documents", "embedding", input={"quantidade": len(textos)}, model=self.modelo):
+            return self._embed(textos, "RETRIEVAL_DOCUMENT")
 
     def embed_query(self, texto):
-        return self._embed([texto], "RETRIEVAL_QUERY")[0]
+        with obs.observacao("embed-query", "embedding", input=texto, model=self.modelo) as span:
+            vetor = self._embed([texto], "RETRIEVAL_QUERY")[0]
+            span.update(output={"dimensoes": len(vetor)})
+            return vetor
 
 
 class LocalEmbedder:

@@ -1,5 +1,6 @@
 """Interface Streamlit do assistente de dados."""
 import json
+import uuid
 
 import pandas as pd
 import streamlit as st
@@ -61,7 +62,9 @@ def mostrar_passos(msg: dict) -> None:
         st.caption("Passos lidos do Langfuse")
         for p in remotos:
             dur = f" ({p['duracao_s']}s)" if p["duracao_s"] is not None else ""
-            st.markdown(f"**{p['nome']}**{dur}  \n`{p['tipo']}`")
+            recuo = "&nbsp;" * 6 * p.get("profundidade", 0)
+            modelo = f", {p['modelo']}" if p.get("modelo") else ""
+            st.markdown(f"{recuo}**{p['nome']}**{dur}  \n{recuo}`{p['tipo']}{modelo}`")
             if p["entrada"] not in (None, "", {}):
                 st.json(p["entrada"] if isinstance(p["entrada"], (dict, list)) else str(p["entrada"])[:1500], expanded=False)
             if p["saida"] not in (None, "", {}):
@@ -73,6 +76,13 @@ def mostrar_passos(msg: dict) -> None:
             mostrar_passo_local(ev)
     if msg.get("trace_url"):
         st.markdown(f"[Abrir no Langfuse]({msg['trace_url']})")
+
+
+def registrar_feedback(chave: str, trace_id: str) -> None:
+    nota = st.session_state.get(chave)
+    if nota is not None:
+        obs.pontuar(trace_id, "user-feedback", float(nota), tipo="NUMERIC")
+        obs.descarregar()
 
 
 def mostrar_resposta(msg: dict, com_raciocinio: bool = True) -> None:
@@ -97,6 +107,9 @@ def mostrar_resposta(msg: dict, com_raciocinio: bool = True) -> None:
     if com_raciocinio:
         with st.expander("Raciocínio do agente"):
             mostrar_passos(msg)
+    if msg.get("trace_id") and obs.habilitado():
+        chave = f"fb_{msg['trace_id']}"
+        st.feedback("thumbs", key=chave, on_change=registrar_feedback, args=(chave, msg["trace_id"]))
 
 
 st.title("Assistente de dados")
@@ -109,6 +122,7 @@ with st.sidebar:
         st.text(f"{nome}: {valor}")
     if st.button("Limpar conversa"):
         st.session_state.mensagens = []
+        st.session_state.sessao = uuid.uuid4().hex
         st.rerun()
     st.subheader("Exemplos")
     for ex in EXEMPLOS:
@@ -117,6 +131,8 @@ with st.sidebar:
 
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = []
+if "sessao" not in st.session_state:
+    st.session_state.sessao = uuid.uuid4().hex  # uma sessao do Langfuse por conversa
 
 for m in st.session_state.mensagens:
     with st.chat_message(m["role"]):
@@ -141,7 +157,8 @@ if pergunta:
             linhas.append(f"{ev.t:>5}s  {ev.titulo}")
             vivo.code("\n".join(linhas), language="text")
 
-        resp = responder(pergunta, historico=historico, on_event=ao_evento)
+        resp = responder(pergunta, historico=historico, on_event=ao_evento, session_id=st.session_state.sessao,
+                         tags=["streamlit"])
         passos = obs.buscar_passos(resp.trace_id) if resp.trace_id else None
         status.update(label="Raciocínio do agente", state="error" if resp.erro else "complete", expanded=False)
         msg = {

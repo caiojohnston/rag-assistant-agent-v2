@@ -11,6 +11,17 @@
 - Metadados do trace: `session_id` da conversa, versão do prompt, modelo, resultado da guarda.
 - Scores anexados ao trace nas avaliações offline (spec `06`).
 
+### Decisões de instrumentação (auditadas contra as boas práticas do Langfuse)
+
+- Um trace por pergunta (`answer-question`, tipo `agent`), uma sessão por conversa do Streamlit (`session_id`), tags `assistente` e a origem (`streamlit`, `eval`, `set-A|B|C`), ambiente e release (hash do git) no cliente.
+- Cada chamada ao Gemini é uma `generation` própria (`decide-next-action`, `generate-sql`, `fix-sql`, `rewrite-answer`), com modelo, tokens de entrada, saída e raciocínio, e mensagens no formato OpenAI, que o Langfuse renderiza como conversa. A integração OpenInference do Gemini foi testada e descartada: nomes genéricos (`GenerateContent`), cabeçalhos HTTP na saída e nenhum registro do raciocínio.
+- Nomes com verbo primeiro e sem valores dinâmicos: `generate-and-run-sql` (agent), `validate-sql` e `verify-answer` (guardrail), `execute-sql` e `get-quality-report` (tool), `retrieve-documents` (retriever), `embed-query` (embedding). A tool `consultar_dados` não gera nó próprio: o subagente de SQL já é o nó, para não duplicar despacho e execução.
+- Entrada e saída são definidas explicitamente (`capture_input=False`), para não enviar argumentos de função nem credenciais. `mask` remove e-mail, CNPJ e telefone antes do envio.
+- Busca que traz texto não confiável (D013) sobe como `WARNING`; SQL bloqueado também.
+- Scores: `user-feedback` (polegar na interface) e, nas avaliações, `hit_at_k`, `recusa_correta`, `ragas_*`, `execution_accuracy`, `numeros_fieis`, `adversarial_passou`.
+- Limitação: o `gemini-3.5-flash` conta os tokens de raciocínio, mas não devolve o resumo do raciocínio pela API, então só a contagem fica registrada.
+- A API v1 de traces não existe para organizações novas do Langfuse Cloud; a interface lê os passos pela API v2 de observações.
+
 Hospedagem: Langfuse Cloud (plano gratuito) por padrão, pela simplicidade. Para uso 100% local há o caminho self-host via Docker Compose oficial do Langfuse, que exige mais serviços (ClickHouse, Redis, MinIO). A escolha é feita por variáveis de ambiente (`LANGFUSE_HOST`) e não altera o código.
 
 ## Interface Streamlit (RF-41)

@@ -22,7 +22,7 @@ def roteiro(monkeypatch, respostas):
     fila = list(respostas)
     chamadas = []
 
-    def falso(contents, com_tools=True):
+    def falso(contents, com_tools=True, **_):
         chamadas.append(com_tools)
         return fila.pop(0)
 
@@ -76,7 +76,7 @@ def test_guardrail_refaz_resposta_que_repete_a_injecao(monkeypatch):
 
 
 def test_erro_do_modelo_vira_resposta_de_falha(monkeypatch):
-    def quebra(contents, com_tools=True):
+    def quebra(contents, com_tools=True, **_):
         raise RuntimeError("sem rede")
 
     monkeypatch.setattr(orq, "_chamar_modelo", quebra)

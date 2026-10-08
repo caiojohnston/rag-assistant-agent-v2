@@ -23,15 +23,25 @@ def threshold_do_backend(backend: str) -> float:
     return settings.rag_threshold if settings.rag_threshold is not None else THRESHOLD_PADRAO.get(backend, 0.5)
 
 
-@obs.observar(name="rag.retrieve", as_type="retriever")
+def _alerta(trechos: list) -> dict:
+    """Destaca no Langfuse as buscas que trouxeram texto marcado como nao confiavel (possivel prompt injection)."""
+    suspeitos = [t.id for t in trechos if t.confianca == "nao_confiavel"]
+    if not suspeitos:
+        return {}
+    return {"level": "WARNING", "status_message": f"trecho nao confiavel recuperado: {', '.join(suspeitos)}"}
+
+
+@obs.observar(name="retrieve-documents", as_type="retriever")
 def buscar(consulta: str, k: int | None = None, threshold: float | None = None, filtro: dict | None = None,
            embedder: Embedder | None = None) -> list[Trecho]:
     """Devolve ate k trechos com similaridade (cosseno) acima do threshold, do mais ao menos similar."""
     embedder = embedder or get_embedder()
     k = k or settings.rag_k
     limite = threshold_do_backend(embedder.nome) if threshold is None else threshold
+    obs.atualizar(input=consulta, metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": embedder.nome})
     col = colecao(embedder.nome)
     if col.count() == 0:
+        obs.atualizar(output=[])
         return []
     r = col.query(query_embeddings=[embedder.embed_query(consulta)], n_results=min(k, col.count()),
                   where=filtro or None, include=["documents", "metadatas", "distances"])
@@ -41,6 +51,10 @@ def buscar(consulta: str, k: int | None = None, threshold: float | None = None, 
         if score >= limite:
             trechos.append(Trecho(meta.get("id", cid), meta.get("fonte", ""), doc, round(score, 4),
                                   meta.get("confianca", "alta"), meta))
-    obs.atualizar_span(input={"consulta": consulta, "k": k, "threshold": limite},
-                       output=[{"id": t.id, "score": t.score} for t in trechos])
+    # Saida com o texto recuperado: e o contexto que o modelo viu ao decidir.
+    obs.atualizar(output=[{"id": t.id, "fonte": t.fonte, "score": t.score, "confianca": t.confianca,
+                           "texto": t.texto[:400]} for t in trechos],
+                  metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": embedder.nome,
+                            "recuperados": len(trechos), "descartados_pelo_threshold": min(k, col.count()) - len(trechos)},
+                  **_alerta(trechos))
     return trechos
