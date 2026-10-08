@@ -6,6 +6,8 @@
 |---|---|---|---|
 | 2026-10-08 | todas | Criação inicial | Início do projeto |
 | 2026-10-08 | 01, 02 | RN-15: `valor_total` passa a ser quantidade x preço (como a origem reporta) e entra `valor_liquido` com desconto. | O total informado ignora o desconto em 30 das 34 vendas com desconto; aplicá-lo mudaria o faturamento sem base na origem |
+| 2026-10-08 | 02, 07 | Camada raw vira uma tabela `raw.registros` (jsonb) e a quarentena `quarantine.registros`, em vez de uma tabela por arquivo. Relatório de qualidade passa a ser gravado em `meta.relatorio_qualidade`. | Simplifica a carga e permite o app ler o relatório no Railway, onde não há disco compartilhado com o job de carga |
+| 2026-10-08 | 04 | Few-shot do agente de SQL trocado por exemplos que não repetem as perguntas do conjunto B. | Evitar contaminação da avaliação |
 | 2026-10-08 | 01 | Vendedores: só V001 é duplicata, vizinhos são pessoas diferentes. Estoque: regra de duplicata por nome normalizado. Datas ambíguas com hífen sinalizadas. CNPJ inválido sinalizado. Produto canônico. | Leitura completa dos arquivos antes de codar; a spec inicial supunha pares de vendedores duplicados |
 
 ## Edições nos dados originais
