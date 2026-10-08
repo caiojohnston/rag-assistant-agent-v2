@@ -1,0 +1,156 @@
+"""Interface Streamlit do assistente de dados."""
+import json
+
+import pandas as pd
+import streamlit as st
+
+from cristalux import obs
+from cristalux.agent.orquestrador import Evento, responder
+from cristalux.config import settings
+
+st.set_page_config(page_title="Assistente de dados", layout="wide")
+
+EXEMPLOS = [
+    "Quais regiões tiveram queda de vendas em 2023?",
+    "Quem são os top 3 compradores por volume?",
+    "Qual vendedor teve o melhor desempenho nos últimos 5 anos?",
+    "Qual foi o faturamento mensal de 2022?",
+    "Os dados estão limpos e prontos para uso?",
+    "Quais decisões de logística foram tomadas?",
+    "Quais produtos estão abaixo do estoque mínimo?",
+]
+
+
+@st.cache_data(ttl=30)
+def status_conexoes() -> dict:
+    out = {}
+    try:
+        import psycopg
+        with psycopg.connect(settings.agent_database_url, connect_timeout=3) as c:
+            out["Postgres"] = f"ok ({c.execute('SELECT count(*) FROM vw_vendas_todas').fetchone()[0]} vendas)"
+    except Exception as e:
+        out["Postgres"] = f"indisponível ({type(e).__name__})"
+    try:
+        from cristalux.rag.embeddings import backend_padrao
+        from cristalux.rag.store import colecao
+        b = backend_padrao()
+        out["Chroma"] = f"ok ({colecao(b).count()} trechos, embeddings {b})"
+    except Exception as e:
+        out["Chroma"] = f"indisponível ({type(e).__name__})"
+    out["Gemini"] = "chave configurada" if settings.gemini_api_key else "sem chave (GEMINI_API_KEY)"
+    out["Langfuse"] = "ativo" if obs.habilitado() else "desativado"
+    return out
+
+
+def mostrar_passo_local(ev: dict) -> None:
+    st.markdown(f"**{ev['titulo']}**  \n`{ev['t']}s`")
+    d = ev["dados"]
+    if ev["tipo"] in ("sql_gerado", "sql_validado") and d.get("sql"):
+        st.code(d["sql"], language="sql")
+        extra = {k: v for k, v in d.items() if k != "sql" and v not in ("", None)}
+        if extra:
+            st.caption(json.dumps(extra, ensure_ascii=False))
+    elif d:
+        st.json(d, expanded=False)
+
+
+def mostrar_passos(msg: dict) -> None:
+    """Passos do trace. Usa o Langfuse quando disponível e cai para os eventos locais."""
+    remotos = msg.get("passos_langfuse")
+    if remotos:
+        st.caption("Passos lidos do Langfuse")
+        for p in remotos:
+            dur = f" ({p['duracao_s']}s)" if p["duracao_s"] is not None else ""
+            st.markdown(f"**{p['nome']}**{dur}  \n`{p['tipo']}`")
+            if p["entrada"] not in (None, "", {}):
+                st.json(p["entrada"] if isinstance(p["entrada"], (dict, list)) else str(p["entrada"])[:1500], expanded=False)
+            if p["saida"] not in (None, "", {}):
+                st.json(p["saida"] if isinstance(p["saida"], (dict, list)) else str(p["saida"])[:1500], expanded=False)
+    else:
+        if obs.habilitado() and msg.get("trace_id"):
+            st.caption("Trace remoto indisponível no momento; mostrando os passos locais")
+        for ev in msg.get("eventos", []):
+            mostrar_passo_local(ev)
+    if msg.get("trace_url"):
+        st.markdown(f"[Abrir no Langfuse]({msg['trace_url']})")
+
+
+def mostrar_resposta(msg: dict, com_raciocinio: bool = True) -> None:
+    st.markdown(msg["content"])
+    for t in msg.get("tabelas", []):
+        df = pd.DataFrame(t["linhas"], columns=t["colunas"])
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        if t["total_linhas"] > len(df):
+            st.caption(f"Mostrando {len(df)} de {t['total_linhas']} linhas")
+    if msg.get("fontes"):
+        with st.expander("Fontes"):
+            for f in msg["fontes"]:
+                if f["tipo"] == "sql":
+                    st.code(f["sql"], language="sql")
+                    if f.get("premissas"):
+                        st.caption(f"Premissas: {f['premissas']}")
+                elif f["tipo"] == "trecho":
+                    aviso = " (não confiável)" if f["confianca"] == "nao_confiavel" else ""
+                    st.markdown(f"- {f['fonte']} {f['id']}, similaridade {f['score']}{aviso}")
+                else:
+                    st.markdown("- Relatório de qualidade dos dados")
+    if com_raciocinio:
+        with st.expander("Raciocínio do agente"):
+            mostrar_passos(msg)
+
+
+st.title("Assistente de dados")
+st.caption("Perguntas em linguagem natural sobre vendas, compradores, vendedores, estoque e decisões.")
+
+with st.sidebar:
+    st.subheader("Configuração")
+    st.text(f"Modelo: {settings.gemini_model}")
+    for nome, valor in status_conexoes().items():
+        st.text(f"{nome}: {valor}")
+    if st.button("Limpar conversa"):
+        st.session_state.mensagens = []
+        st.rerun()
+    st.subheader("Exemplos")
+    for ex in EXEMPLOS:
+        if st.button(ex, key=ex):
+            st.session_state.pendente = ex
+
+if "mensagens" not in st.session_state:
+    st.session_state.mensagens = []
+
+for m in st.session_state.mensagens:
+    with st.chat_message(m["role"]):
+        if m["role"] == "user":
+            st.markdown(m["content"])
+        else:
+            mostrar_resposta(m)
+
+pergunta = st.chat_input("Escreva sua pergunta") or st.session_state.pop("pendente", None)
+if pergunta:
+    historico = [{"role": m["role"], "content": m["content"]} for m in st.session_state.mensagens]
+    st.session_state.mensagens.append({"role": "user", "content": pergunta})
+    with st.chat_message("user"):
+        st.markdown(pergunta)
+    with st.chat_message("assistant"):
+        status = st.status("O agente está pensando", expanded=False)
+        with status:
+            vivo = st.empty()
+        linhas: list[str] = []
+
+        def ao_evento(ev: Evento) -> None:
+            linhas.append(f"{ev.t:>5}s  {ev.titulo}")
+            vivo.code("\n".join(linhas), language="text")
+
+        resp = responder(pergunta, historico=historico, on_event=ao_evento)
+        passos = obs.buscar_passos(resp.trace_id) if resp.trace_id else None
+        status.update(label="Raciocínio do agente", state="error" if resp.erro else "complete", expanded=False)
+        msg = {
+            "role": "assistant", "content": resp.texto, "fontes": resp.fontes, "tabelas": resp.tabelas,
+            "trace_id": resp.trace_id, "trace_url": resp.trace_url, "passos_langfuse": passos,
+            "eventos": [{"tipo": e.tipo, "titulo": e.titulo, "dados": e.dados, "t": e.t} for e in resp.eventos],
+        }
+        vivo.empty()
+        with status:
+            mostrar_passos(msg)
+        mostrar_resposta(msg, com_raciocinio=False)
+    st.session_state.mensagens.append(msg)

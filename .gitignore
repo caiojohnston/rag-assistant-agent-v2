@@ -8,3 +8,4 @@ chroma_db/
 *.egg-info/
 .DS_Store
 dados_raw/
+.kilo/

@@ -28,6 +28,13 @@ class Settings:
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     gemini_embedding_model: str = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     langfuse_host: str = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
+    langfuse_public_key: str = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+    langfuse_secret_key: str = os.getenv("LANGFUSE_SECRET_KEY", "")
+    # gemini | local | hash. Sem chave do Gemini cai em local.
+    embedding_backend: str = os.getenv("EMBEDDING_BACKEND", "")
+    rag_k: int = int(os.getenv("RAG_K", "5"))
+    rag_threshold: float | None = float(os.getenv("RAG_THRESHOLD")) if os.getenv("RAG_THRESHOLD") else None
+    llm_cache: bool = os.getenv("LLM_CACHE", "0") == "1"
     data_dir: Path = _path("DATA_DIR", "dados_raw")
     reports_dir: Path = _path("REPORTS_DIR", "reports")
     chroma_path: Path = _path("CHROMA_PATH", "chroma_db")
