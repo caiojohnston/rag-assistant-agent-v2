@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cristalux}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cristalux}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cristalux}
+      AGENT_DATABASE_URL: postgresql://cristalux_agent_ro:${AGENT_DB_PASSWORD:-agent_ro_local}@postgres:5432/${POSTGRES_DB:-cristalux}
+      CHROMA_PATH: /data/chroma
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8501}:8501"
+    volumes:
+      - chroma:/data/chroma
+      - ./reports:/app/reports
+
+  # Job de carga: limpa os CSV, grava no Postgres e indexa os textos.
+  # Uso: docker compose --profile jobs run --rm etl
+  etl:
+    build: .
+    profiles: ["jobs"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cristalux}
+      CHROMA_PATH: /data/chroma
+      DATA_DIR: /app/dados_raw
+    command: ["python", "-m", "cristalux.pipeline.run"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./dados_raw:/app/dados_raw:ro
+      - chroma:/data/chroma
+      - ./reports:/app/reports
+
+volumes:
+  pgdata:
+  chroma:
