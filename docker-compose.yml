@@ -1,3 +1,5 @@
+name: cristalux
+
 services:
   postgres:
     image: postgres:16
