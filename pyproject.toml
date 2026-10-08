@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cristalux-assistant"
+version = "0.1.0"
+description = "Assistente em linguagem natural sobre a base interna da Cristalux"
+requires-python = ">=3.11"
+dependencies = [
+  "pandas>=2.2",
+  "psycopg[binary]>=3.2",
+  "sqlalchemy>=2.0",
+  "sqlglot>=25",
+  "python-dotenv>=1.0",
+  "chromadb>=0.5",
+  "google-genai>=1.0",
+  "langfuse>=2.50",
+  "streamlit>=1.40",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "jupyter", "nbconvert", "nbformat", "ipykernel", "ragas>=0.2", "langchain-google-genai"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

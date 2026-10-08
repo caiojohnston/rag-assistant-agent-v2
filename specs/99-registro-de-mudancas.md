@@ -5,6 +5,7 @@
 | Data | Spec | Mudança | Motivo |
 |---|---|---|---|
 | 2026-10-08 | todas | Criação inicial | Início do projeto |
+| 2026-10-08 | 01 | Vendedores: só V001 é duplicata, vizinhos são pessoas diferentes. Estoque: regra de duplicata por nome normalizado. Datas ambíguas com hífen sinalizadas. CNPJ inválido sinalizado. Produto canônico. | Leitura completa dos arquivos antes de codar; a spec inicial supunha pares de vendedores duplicados |
 
 ## Edições nos dados originais
 

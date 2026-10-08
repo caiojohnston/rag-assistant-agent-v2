@@ -37,10 +37,11 @@ Fora:
 | Interface | Streamlit, sem enfeites |
 | Limpeza | Notebooks `.ipynb`, com a lógica reutilizável em módulos Python |
 | Linha D013 | Mantida no corpus de propósito, para demonstrar a defesa contra prompt injection |
+| Containers | Tudo containerizado com Docker (Postgres, app Streamlit, job de carga). Destino de deploy: Railway, com um serviço por container |
 | Idioma | Código em inglês onde convencional, documentação e interface em português |
 | Estilo | Sem emojis, texto simples, sem linguagem de marketing |
 
-Suposição a confirmar: "DStack" foi interpretado como Docker (Compose). Se for outra ferramenta, só muda `08`, tarefa T01.
+Confirmado: "DStack" era Docker. Deploy posterior no Railway.
 
 ## Arquitetura
 
@@ -85,6 +86,7 @@ cristalux/
 ## Requisitos transversais
 
 - RF-00: tudo roda com `docker compose up` mais um comando de setup documentado.
+- RF-04: o app lê toda configuração de variáveis de ambiente, inclusive `DATABASE_URL` e `PORT`, para rodar no Railway sem alteração de código. A imagem do app é uma só (`Dockerfile`); o job de carga e o app usam a mesma imagem com comandos diferentes. O Chroma persiste em volume (`/data/chroma`).
 - RF-01: nenhum segredo no repositório, apenas `.env.example`.
 - RF-02: o dado bruto só recebeu a anonimização do nome da empresa (ver `99`). Toda outra edição vive em código e é registrada.
 - RF-03: toda resposta mostra de onde veio (SQL executado ou trechos recuperados).
