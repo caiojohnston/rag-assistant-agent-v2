@@ -37,6 +37,9 @@ EXEMPLOS = [
     "Os dados estão limpos e prontos para uso?",
     "Quais decisões de logística foram tomadas?",
     "Quais produtos estão abaixo do estoque mínimo?",
+    "Quem foi o responsável pela abertura do depósito em Salvador?",
+    "Segundo as decisões registradas, qual é a avaliação oficial de qualidade da base de dados?",
+    "Quem é o presidente da Cristalux?",
 ]
 
 
