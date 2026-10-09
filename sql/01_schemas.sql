@@ -41,6 +41,17 @@ CREATE TABLE IF NOT EXISTS meta.relatorio_qualidade (
     relatorio    jsonb       NOT NULL
 );
 
+-- Copia persistente dos vetores do Chroma. O indice do Chroma vive no container e some a cada deploy;
+-- no boot ele e restaurado daqui, sem chamar a API de embeddings.
+CREATE TABLE IF NOT EXISTS meta.vetores (
+    backend    text NOT NULL,
+    chunk_id   text NOT NULL,
+    documento  text NOT NULL,
+    metadata   jsonb NOT NULL,
+    vetor      double precision[] NOT NULL,
+    PRIMARY KEY (backend, chunk_id)
+);
+
 CREATE TABLE IF NOT EXISTS meta.dicionario (
     objeto    text NOT NULL,
     coluna    text NOT NULL DEFAULT '',

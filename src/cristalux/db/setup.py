@@ -57,6 +57,8 @@ def _dicionario(cur) -> None:
 
 def setup(url: str | None = None) -> None:
     with conectar(url, autocommit=True) as conn, conn.cursor() as cur:
+        # Serializa boots simultaneos (deploy novo enquanto o antigo reinicia): evita chaves duplicadas no dicionario.
+        cur.execute("SELECT pg_advisory_lock(746102)")
         for arquivo in ("01_schemas.sql", "02_views.sql"):
             cur.execute((settings.sql_dir / arquivo).read_text(encoding="utf-8"))
         _criar_papel(cur)
