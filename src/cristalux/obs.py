@@ -185,18 +185,22 @@ def descarregar() -> None:
             pass
 
 
-def buscar_passos(tid: str | None, tentativas: int = 6, espera: float = 1.5) -> list[dict] | None:
+def buscar_passos(tid: str | None, tentativas: int = 10, espera: float = 1.5) -> list[dict] | None:
     """Passos do trace lidos da API do Langfuse (a ingestao e assincrona, entao tenta algumas vezes)."""
     if not (habilitado() and tid):
         return None
     import time
+    anterior = -1
     for _ in range(tentativas):
         try:
             # A API v1 de traces nao existe para organizacoes novas; a v2 de observacoes e a oficial.
             r = _cliente().api.observations.get_many(trace_id=tid, fields="core,basic,time,io,metadata,model,usage",
                                                      limit=100)
             observacoes = sorted(r.data, key=lambda o: str(getattr(o, "start_time", "")))
-            if observacoes:
+            # A ingestao e assincrona: so devolve quando a raiz chegou e o numero de passos parou de crescer.
+            estavel = len(observacoes) == anterior and any(not o.parent_observation_id for o in observacoes)
+            anterior = len(observacoes)
+            if observacoes and estavel:
                 por_id = {o.id: o for o in observacoes}
 
                 def nivel(o):
