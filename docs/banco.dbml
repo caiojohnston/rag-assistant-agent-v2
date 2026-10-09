@@ -1,0 +1,178 @@
+// Diagrama do banco (PostgreSQL). Cole em https://dbdiagram.io/d para visualizar.
+// Fonte: sql/01_schemas.sql. As views que o agente enxerga estão descritas nas notas no fim.
+
+// ---------------------------------------------------------------- clean (base limpa)
+
+Table clean.dim_vendedor {
+  id_vendedor text [pk]
+  nome text [not null]
+  email text
+  telefone text
+  uf char(2)
+  data_admissao date
+  meta_mensal numeric(12,2)
+  comissao_pct numeric(5,2)
+  status text
+  supervisor text
+  flags "text[]" [not null, default: '{}', note: 'sinalizações da limpeza (ex: admissao_invalida)']
+}
+
+Table clean.dim_comprador {
+  id_comprador text [pk]
+  razao_social text [not null]
+  cnpj text
+  cidade text
+  uf char(2)
+  segmento text
+  porte text
+  contato text
+  email text
+  data_cadastro date
+  limite_credito numeric(14,2)
+  status text
+  flags "text[]" [not null, default: '{}']
+}
+
+Table clean.dim_vendedor_alias {
+  id_descartado text [pk]
+  id_sobrevivente text [not null]
+  note: 'ids de vendedores descartados na deduplicação'
+}
+
+Table clean.dim_comprador_alias {
+  id_descartado text [pk]
+  id_sobrevivente text [not null]
+  note: 'ids de compradores descartados na deduplicação (mesmo CNPJ)'
+}
+
+Table clean.fato_venda {
+  id_venda text [pk]
+  data date [not null, note: 'entre 2020-01-01 e 2024-12-31']
+  id_vendedor text [not null]
+  id_comprador text [not null]
+  produto text [note: 'nome canônico']
+  produto_original text
+  categoria text [note: 'como veio na venda (pouco confiável)']
+  categoria_produto text [note: 'categoria natural do produto; as views usam esta']
+  quantidade integer [not null, note: '> 0']
+  valor_unitario numeric(12,2) [not null, note: '> 0']
+  desconto numeric(5,4) [note: 'fração; nulo = desconhecido']
+  valor_total numeric(14,2) [not null, note: 'quantidade x preço, como a origem reporta (faturamento)']
+  valor_liquido numeric(14,2) [not null, note: 'valor_total depois do desconto']
+  valor_total_informado numeric(14,2)
+  status text [not null, note: 'concluida | cancelada | devolvida | pendente']
+  uf char(2)
+  observacoes text
+  flags "text[]" [not null, default: '{}']
+  linha_origem integer
+}
+
+Table clean.estoque {
+  id_produto text [pk]
+  nome_produto text [not null]
+  categoria text
+  estoque_atual integer [note: '>= 0']
+  estoque_minimo integer
+  ultima_reposicao date
+  lead_time_dias integer
+  fornecedor text
+  custo_unitario numeric(12,2)
+  localizacao_deposito text
+  status text
+  flags "text[]" [not null, default: '{}']
+}
+
+Table clean.decisao {
+  id_decisao text [pk]
+  data date
+  tipo text
+  descricao text
+  responsavel text
+  impacto text
+  resultado text
+  observacoes text
+  suspeita_injection boolean [not null, default: false, note: 'true na D013']
+  padroes_injection "text[]" [not null, default: '{}']
+  flags "text[]" [not null, default: '{}']
+}
+
+// ---------------------------------------------------------------- raw e quarantine
+
+Table raw.registros {
+  arquivo text [pk]
+  linha_origem integer [pk]
+  lote_sha256 text [pk]
+  dados jsonb [not null, note: 'linha do CSV como veio']
+  note: 'camada bruta: nada é alterado aqui'
+}
+
+Table quarantine.registros {
+  arquivo text [pk]
+  linha_origem integer [pk]
+  lote_sha256 text [pk]
+  motivo text [not null]
+  id_sobrevivente text
+  dados jsonb [not null]
+  note: 'linhas rejeitadas na limpeza, com o motivo'
+}
+
+// ---------------------------------------------------------------- meta
+
+Table meta.ingest_log {
+  id serial [pk]
+  arquivo text [not null]
+  sha256 text [not null]
+  linhas_lidas integer [not null]
+  linhas_ok integer [not null]
+  linhas_quarentena integer [not null]
+  executado_em timestamptz [not null]
+
+  indexes {
+    (arquivo, sha256) [unique]
+  }
+  note: 'hash já ingerido não é reprocessado'
+}
+
+Table meta.relatorio_qualidade {
+  id serial [pk]
+  gerado_em timestamptz [not null]
+  relatorio jsonb [not null]
+  note: 'relatório de qualidade lido pela tool relatorio_qualidade'
+}
+
+Table meta.dicionario {
+  objeto text [pk]
+  coluna text [pk, default: '']
+  tipo text
+  descricao text [not null]
+  note: 'dicionário de dados das views, usado no prompt do agente de SQL'
+}
+
+Table meta.vetores {
+  backend text [pk, note: 'gemini | local']
+  chunk_id text [pk]
+  documento text [not null]
+  metadata jsonb [not null]
+  vetor "double precision[]" [not null]
+  note: 'cópia persistente dos vetores do Chroma, restaurada no boot'
+}
+
+// ---------------------------------------------------------------- relacionamentos
+
+Ref: clean.fato_venda.id_vendedor > clean.dim_vendedor.id_vendedor
+Ref: clean.fato_venda.id_comprador > clean.dim_comprador.id_comprador
+Ref: clean.dim_vendedor_alias.id_sobrevivente > clean.dim_vendedor.id_vendedor
+Ref: clean.dim_comprador_alias.id_sobrevivente > clean.dim_comprador.id_comprador
+
+// ---------------------------------------------------------------- views (o agente só enxerga estas)
+
+Note views {
+  '''
+  vw_vendas_todas: fato_venda + vendedor + comprador, todos os status
+  vw_vendas: só status = concluida
+  vw_faturamento_mensal_vendedor: faturamento por mês e vendedor
+  vw_faturamento_uf_ano: faturamento por UF e ano
+  vw_compradores, vw_vendedores, vw_estoque: sem dados de contato
+  Papel cristalux_agent_ro: somente leitura, só estas views e meta.dicionario
+  '''
+}
