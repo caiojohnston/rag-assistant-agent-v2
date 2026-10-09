@@ -5,6 +5,7 @@ import hashlib
 import math
 import os
 import re
+import time
 from typing import Protocol
 
 from cristalux import obs
@@ -38,14 +39,25 @@ class GeminiEmbedder:
         return saida
 
     def embed_documents(self, textos):
-        with obs.observacao("embed-documents", "embedding", input={"quantidade": len(textos)}, model=self.modelo):
-            return self._embed(textos, "RETRIEVAL_DOCUMENT")
+        return self._com_span("embed-documents", {"quantidade": len(textos)}, lambda: self._embed(textos, "RETRIEVAL_DOCUMENT"))
 
     def embed_query(self, texto):
-        with obs.observacao("embed-query", "embedding", input=texto, model=self.modelo) as span:
-            vetor = self._embed([texto], "RETRIEVAL_QUERY")[0]
-            span.update(output={"dimensoes": len(vetor)})
-            return vetor
+        return self._com_span("embed-query", texto, lambda: self._embed([texto], "RETRIEVAL_QUERY")[0])
+
+    def _com_span(self, nome: str, entrada, fn):
+        """Registra a chamada no Langfuse. Cota esgotada vira WARNING (o sistema segue pelo modelo local), nao ERROR."""
+        from cristalux.llm import CotaDiariaEsgotada
+
+        erro = None
+        with obs.observacao(nome, "embedding", input=entrada, model=self.modelo) as span:
+            try:
+                resultado = fn()
+                span.update(output={"dimensoes": len(resultado[0]) if resultado and isinstance(resultado[0], list) else len(resultado)})
+                return resultado
+            except CotaDiariaEsgotada as e:
+                span.update(level="WARNING", status_message=f"cota de embeddings do Gemini esgotada; usando o modelo local ({e})")
+                erro = e
+        raise erro
 
 
 class LocalEmbedder:
@@ -63,7 +75,11 @@ class LocalEmbedder:
         return [v.tolist() for v in self._m.embed(textos)]
 
     def embed_query(self, texto):
-        return self.embed_documents([texto])[0]
+        with obs.observacao("embed-query", "embedding", input=texto, model=self.modelo,
+                            metadata={"reserva_local": True}) as span:
+            vetor = self.embed_documents([texto])[0]
+            span.update(output={"dimensoes": len(vetor)})
+            return vetor
 
 
 class HashEmbedder:
@@ -96,7 +112,14 @@ class ComFallback:
     def __init__(self, primario, secundario=None):
         self.primario = primario
         self._secundario = secundario
-        self._trocou = False
+        self._trocou_em: float | None = None
+
+    @property
+    def _trocou(self) -> bool:
+        """Depois de trocar, usa o modelo local por 10 minutos e so entao tenta o Gemini de novo."""
+        if self._trocou_em is not None and time.time() - self._trocou_em > PAUSA_APOS_TROCA:
+            self._trocou_em = None
+        return self._trocou_em is not None
 
     @property
     def nome(self) -> str:
@@ -104,7 +127,7 @@ class ComFallback:
 
     def usar_secundario(self) -> None:
         """Forca o modelo de reserva (ex.: a colecao do primario esta vazia)."""
-        self._trocou = True
+        self._trocou_em = time.time()
 
     def _secundario_nome(self) -> str:
         return self._get_secundario().nome
@@ -121,7 +144,7 @@ class ComFallback:
             try:
                 return getattr(self.primario, metodo)(arg)
             except CotaDiariaEsgotada:
-                self._trocou = True
+                self._trocou_em = time.time()
                 print("aviso: cota de embeddings do Gemini esgotada; usando o modelo local")
         return getattr(self._get_secundario(), metodo)(arg)
 
@@ -142,11 +165,20 @@ def backend_padrao() -> str:
     return "gemini" if settings.gemini_api_key else "local"
 
 
+PAUSA_APOS_TROCA = 600.0
+_FALLBACK_UNICO: "ComFallback | None" = None
+
+
 def get_embedder(backend: str | None = None) -> Embedder:
     backend = backend or backend_padrao()
     if backend == "gemini":
         # EMBEDDING_FALLBACK=off desliga a troca automatica para o modelo local quando a cota acaba.
-        return GeminiEmbedder() if os.getenv("EMBEDDING_FALLBACK", "local") == "off" else ComFallback(GeminiEmbedder())
+        if os.getenv("EMBEDDING_FALLBACK", "local") == "off":
+            return GeminiEmbedder()
+        global _FALLBACK_UNICO
+        if _FALLBACK_UNICO is None:  # um so por processo: lembra que a cota acabou entre uma pergunta e outra
+            _FALLBACK_UNICO = ComFallback(GeminiEmbedder())
+        return _FALLBACK_UNICO
     if backend == "local":
         return LocalEmbedder()
     if backend == "hash":
