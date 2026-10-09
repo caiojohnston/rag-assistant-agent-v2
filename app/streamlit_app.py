@@ -61,6 +61,22 @@ def status_conexoes() -> dict:
     return out
 
 
+def mostrar_valor(rotulo: str, valor) -> None:
+    """Entrada ou saida de um passo. O Langfuse devolve JSON como texto; texto simples vai em bloco de codigo."""
+    if valor in (None, "", {}, []):
+        return
+    if isinstance(valor, str):
+        try:
+            valor = json.loads(valor)
+        except ValueError:
+            pass
+    with st.expander(rotulo):
+        if isinstance(valor, (dict, list)):
+            st.json(valor, expanded=False)
+        else:
+            st.code(str(valor)[:4000], language="text")
+
+
 def mostrar_passo_local(ev: dict) -> None:
     st.markdown(f"**{ev['titulo']}**  \n`{ev['t']}s`")
     d = ev["dados"]
@@ -83,10 +99,8 @@ def mostrar_passos(msg: dict) -> None:
             recuo = "&nbsp;" * 6 * p.get("profundidade", 0)
             modelo = f", {p['modelo']}" if p.get("modelo") else ""
             st.markdown(f"{recuo}**{p['nome']}**{dur}  \n{recuo}`{p['tipo']}{modelo}`")
-            if p["entrada"] not in (None, "", {}):
-                st.json(p["entrada"] if isinstance(p["entrada"], (dict, list)) else str(p["entrada"])[:1500], expanded=False)
-            if p["saida"] not in (None, "", {}):
-                st.json(p["saida"] if isinstance(p["saida"], (dict, list)) else str(p["saida"])[:1500], expanded=False)
+            mostrar_valor("Entrada", p["entrada"])
+            mostrar_valor("Saída", p["saida"])
     else:
         if obs.habilitado() and msg.get("trace_id"):
             st.caption("Trace remoto indisponível no momento; mostrando os passos locais")

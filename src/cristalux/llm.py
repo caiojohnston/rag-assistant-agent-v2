@@ -125,15 +125,43 @@ def extrair_saida(resp) -> tuple[dict, str]:
     return msg, "\n".join(pensamento).strip()
 
 
+_ESGOTADOS: dict[str, float] = {}  # modelo -> instante em que a cota diaria acabou
+_PAUSA_APOS_ESGOTAR = 3600.0
+
+
+def _gerar_com_reserva(modelo: str, contents, config):
+    """Tenta o modelo principal e, se a cota diaria acabou ou ele esta indisponivel, os modelos de reserva em ordem.
+
+    Um modelo cuja cota acabou e pulado por uma hora no processo, para nao repetir chamadas que vao falhar.
+    Devolve (resposta, modelo_usado).
+    """
+    from google.genai import errors
+
+    fila = [modelo] + [m for m in settings.gemini_fallback_models if m != modelo]
+    ultimo: Exception | None = None
+    for m in fila:
+        if time.time() - _ESGOTADOS.get(m, 0.0) < _PAUSA_APOS_ESGOTAR:
+            continue
+        try:
+            return com_repeticao(lambda: cliente().models.generate_content(model=m, contents=contents, config=config)), m
+        except CotaDiariaEsgotada as e:
+            _ESGOTADOS[m] = time.time()
+            ultimo = e
+        except errors.ServerError as e:  # 503 persistente: tenta o proximo
+            ultimo = e
+    raise ultimo or CotaDiariaEsgotada("todos os modelos estao sem cota")
+
+
 def chamar_gemini(nome: str, contents, config=None, system: str | None = None, modelo: str | None = None,
                   parametros: dict | None = None):
     """Uma chamada ao Gemini registrada como `generation` com nome estavel.
 
     Registra modelo, tokens (entrada, saida e raciocinio), mensagens de entrada e saida e o resumo do raciocinio.
+    Se o modelo principal estiver sem cota, usa os modelos de reserva (GEMINI_FALLBACK_MODELS) e registra qual foi usado.
     """
     modelo = modelo or settings.gemini_model
     with obs.geracao(nome, modelo, input=para_mensagens(system, contents), model_parameters=parametros) as g:
-        resp = com_repeticao(lambda: cliente().models.generate_content(model=modelo, contents=contents, config=config))
+        resp, usado = _gerar_com_reserva(modelo, contents, config)
         saida, pensamento = extrair_saida(resp)
         uso = getattr(resp, "usage_metadata", None)
         detalhes = {"input": getattr(uso, "prompt_token_count", 0) or 0,
@@ -144,9 +172,10 @@ def chamar_gemini(nome: str, contents, config=None, system: str | None = None, m
             detalhes["input_cached_tokens"] = uso.cached_content_token_count
         if pensamento:
             saida["reasoning"] = pensamento[:3000]
-        g.update(output=saida, usage_details=detalhes,
-                 metadata={"pensamento_chars": len(pensamento), "finish_reason": str(
-                     getattr(resp.candidates[0], "finish_reason", "")) if resp.candidates else ""})
+        g.update(output=saida, usage_details=detalhes, model=usado,
+                 metadata={"pensamento_chars": len(pensamento), "modelo_principal": modelo,
+                           "usou_reserva": usado != modelo,
+                           "finish_reason": str(getattr(resp.candidates[0], "finish_reason", "")) if resp.candidates else ""})
     return resp
 
 

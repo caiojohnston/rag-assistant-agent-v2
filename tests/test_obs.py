@@ -42,3 +42,28 @@ def test_pensamento_nao_entra_nas_mensagens_e_vai_para_o_campo_reasoning():
     assert pensamento == "vou consultar o banco"
     historico = para_mensagens(None, [types.Content(role="model", parts=partes)])
     assert historico[0]["content"] == "Resposta final"
+
+
+def test_reserva_de_modelo_quando_a_cota_acaba(monkeypatch):
+    from cristalux import llm
+
+    chamados = []
+
+    class Modelos:
+        def generate_content(self, model, contents, config):
+            chamados.append(model)
+            if model == "principal":
+                raise llm.CotaDiariaEsgotada("acabou")
+            return f"resposta-{model}"
+
+    monkeypatch.setattr(llm, "cliente", lambda: type("C", (), {"models": Modelos()})())
+    monkeypatch.setattr(llm.settings.__class__, "gemini_fallback_models", ("reserva1", "reserva2"), raising=False)
+    object.__setattr__(llm.settings, "gemini_fallback_models", ("reserva1", "reserva2"))
+    llm._ESGOTADOS.clear()
+
+    resp, usado = llm._gerar_com_reserva("principal", [], None)
+    assert usado == "reserva1" and resp == "resposta-reserva1"
+    # o principal fica em pausa: a chamada seguinte nem tenta de novo
+    chamados.clear()
+    llm._gerar_com_reserva("principal", [], None)
+    assert "principal" not in chamados

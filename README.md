@@ -158,6 +158,8 @@ O enunciado aceita provedores gratuitos. Usei o Gemini porque o mesmo provedor c
 - Modelos preview: respondiam 503 por alta demanda.
 - `gemini-3.1-flash-lite`: aceitou todas as chamadas dos testes e das avaliações.
 
+Mesmo o `gemini-3.1-flash-lite` tem cota diária (500 requisições por dia no plano gratuito, que as avaliações esgotaram). Por isso há uma **cadeia de modelos de reserva** (`GEMINI_FALLBACK_MODELS`: `gemini-3-flash-preview`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-flash-lite-latest`): se o principal responder 429 de cota diária ou ficar indisponível, o próximo assume, e o principal fica em pausa por uma hora no processo. O Langfuse registra, em cada generation, qual modelo respondeu e se foi reserva. Com a cota do principal esgotada, uma pergunta de teste respondeu certo em 6 segundos pela reserva.
+
 O nível de raciocínio é `low` (`GEMINI_THINKING_LEVEL`). Com raciocínio alto, uma pergunta chegou a levar mais de 100 segundos.
 
 ### Agente escrito direto no SDK, sem framework
@@ -384,7 +386,7 @@ Ela não garante que o sistema funciona para usuários reais. São 39 casos escr
 
 ### Dependências e riscos operacionais
 
-- **Cotas do Gemini no plano gratuito.** O `gemini-3.5-flash` permite 20 requisições por dia; os modelos preview respondem 503. Usei o `gemini-3.1-flash-lite`. A geração não tem modelo reserva; os embeddings têm (modelo local, com threshold e qualidade um pouco diferentes: hit@1 de 93% contra 100%).
+- **Cotas do Gemini no plano gratuito.** O `gemini-3.5-flash` permite 20 requisições por dia, o `gemini-3.1-flash-lite` 500, e os modelos preview respondem 503 de vez em quando. A geração tem uma cadeia de modelos de reserva; os embeddings têm o modelo local (com threshold e qualidade um pouco diferentes: hit@1 de 93% contra 100%). Se todos os modelos da cadeia ficarem sem cota, o agente informa a falha e não responde de memória.
 - **Latência.** De 5 a 30 segundos por pergunta, dominada pelas chamadas ao modelo.
 - **Margem do threshold.** O mínimo das positivas (0,745) e o máximo das negativas (0,671) estão a 0,07 de distância, calibrados com 25 perguntas.
 - **Detector de injection por padrões.** Pega o caso da D013 e variantes próximas. Uma formulação nova passa pelo detector; o que protege nesse caso é a estrutura (qualidade medida por código, texto como dado, verificador de saída).

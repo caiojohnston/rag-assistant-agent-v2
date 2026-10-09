@@ -47,6 +47,10 @@ class Settings:
     app_password: str = os.getenv("APP_PASSWORD", "")
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
+    # Modelos de reserva, na ordem, quando a cota diaria do principal acaba (ou ele fica indisponivel).
+    gemini_fallback_models: tuple = tuple(m.strip() for m in os.getenv(
+        "GEMINI_FALLBACK_MODELS", "gemini-3-flash-preview,gemini-3.6-flash,gemini-3.5-flash,gemini-flash-lite-latest"
+    ).split(",") if m.strip())
     gemini_embedding_model: str = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     langfuse_host: str = os.getenv("LANGFUSE_BASE_URL") or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
     langfuse_public_key: str = os.getenv("LANGFUSE_PUBLIC_KEY", "")
