@@ -102,6 +102,10 @@ class ComFallback:
     def nome(self) -> str:
         return self._secundario_nome() if self._trocou else self.primario.nome
 
+    def usar_secundario(self) -> None:
+        """Forca o modelo de reserva (ex.: a colecao do primario esta vazia)."""
+        self._trocou = True
+
     def _secundario_nome(self) -> str:
         return self._get_secundario().nome
 

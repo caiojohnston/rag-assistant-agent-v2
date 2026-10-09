@@ -104,3 +104,15 @@ def test_fallback_troca_para_o_secundario_quando_a_cota_acaba(chroma_tmp):
     assert e.nome == "hash" and r["backend"] == "hash" and r["total"] == 3
     achados = buscar("abertura de deposito em Salvador", embedder=e, threshold=0.2)
     assert achados and achados[0].id == "D004"
+
+
+def test_colecao_do_primario_vazia_usa_a_reserva(chroma_tmp):
+    from cristalux.rag.embeddings import ComFallback
+
+    class Primario(HashEmbedder):
+        nome = "gemini"
+
+    e = ComFallback(Primario(), HashEmbedder())
+    store.indexar(chunks(), HashEmbedder())      # so a colecao da reserva existe
+    achados = buscar("abertura de deposito em Salvador", embedder=e, threshold=0.2)
+    assert achados and achados[0].id == "D004" and e.nome == "hash"

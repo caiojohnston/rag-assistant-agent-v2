@@ -42,6 +42,10 @@ def buscar(consulta: str, k: int | None = None, threshold: float | None = None, 
     limite = threshold_do_backend(backend) if threshold is None else threshold
     obs.atualizar(input=consulta, metadata={"k": k, "threshold": limite, "filtro": filtro, "embeddings": backend})
     col = colecao(backend)
+    if col.count() == 0 and hasattr(embedder, "usar_secundario") and not getattr(embedder, "_trocou", True):
+        # O indice do primario nao existe (ex.: foi criado so com o modelo local por falta de cota): usa a reserva.
+        embedder.usar_secundario()
+        return buscar(consulta, k=k, threshold=threshold, filtro=filtro, embedder=embedder)
     if col.count() == 0:
         obs.atualizar(output=[])
         return []
