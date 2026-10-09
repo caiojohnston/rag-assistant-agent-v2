@@ -51,6 +51,12 @@ class Settings:
     gemini_fallback_models: tuple = tuple(m.strip() for m in os.getenv(
         "GEMINI_FALLBACK_MODELS", "gemini-3-flash-preview,gemini-3.6-flash,gemini-3.5-flash,gemini-flash-lite-latest"
     ).split(",") if m.strip())
+    # Ultima reserva da geracao: modelos gratuitos do OpenRouter (precisam de OPENROUTER_API_KEY).
+    openrouter_api_key: str = os.getenv("OPENROUTER_API_KEY", "")
+    openrouter_models: tuple = tuple(m.strip() for m in os.getenv(
+        "OPENROUTER_MODELS",
+        "google/gemma-4-31b-it:free,nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-26b-a4b-it:free,"
+        "apodex/apodex-1.1-mini:free,openrouter/free").split(",") if m.strip())
     gemini_embedding_model: str = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
     langfuse_host: str = os.getenv("LANGFUSE_BASE_URL") or os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
     langfuse_public_key: str = os.getenv("LANGFUSE_PUBLIC_KEY", "")

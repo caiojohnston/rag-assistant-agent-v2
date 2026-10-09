@@ -56,6 +56,24 @@ def executar_sql(sql: str) -> tuple[list[str], list[dict]]:
     return colunas, [{k: _json_seguro(v) for k, v in l.items()} for l in linhas]
 
 
+def extrair_json(texto: str) -> dict:
+    """JSON da resposta do modelo. Tolera cerca de codigo e texto em volta, comuns em modelos de reserva."""
+    t = (texto or "").strip()
+    for candidato in (t, t.strip("`").removeprefix("json").strip()):
+        try:
+            valor = json.loads(candidato)
+            return valor if isinstance(valor, dict) else {"sql": "", "premissas": ""}
+        except json.JSONDecodeError:
+            pass
+    ini, fim = t.find("{"), t.rfind("}")
+    if 0 <= ini < fim:
+        try:
+            return json.loads(t[ini:fim + 1])
+        except json.JSONDecodeError:
+            pass
+    return {"sql": "", "premissas": ""}
+
+
 def _pedir_sql(pergunta: str, erro_anterior: str | None, sql_anterior: str | None) -> dict:
     prompt = f"{_contexto()}\nPERGUNTA: {pergunta}\n"
     if erro_anterior:
@@ -63,10 +81,7 @@ def _pedir_sql(pergunta: str, erro_anterior: str | None, sql_anterior: str | Non
                    "Corrija e devolva o JSON novamente.")
     bruto = gerar_texto(prompt, system=SYSTEM, json_mode=True,
                        nome="generate-sql" if not erro_anterior else "fix-sql")
-    try:
-        return json.loads(bruto)
-    except json.JSONDecodeError:
-        return {"sql": "", "premissas": ""}
+    return extrair_json(bruto)
 
 
 @obs.observar(name="generate-and-run-sql", as_type="agent")

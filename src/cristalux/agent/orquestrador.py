@@ -184,7 +184,8 @@ def _responder(pergunta: str, historico: list[dict] | None, on_event) -> Respost
                 emitir("tool_resultado", f"Resultado de {fc.name}",
                        {"nome": fc.name, "erro": resultado.get("erro"),
                         "resumo": {k: v for k, v in resultado.items() if k in ("total_linhas", "encontrou", "tentativas")}})
-                respostas.append(types.Part.from_function_response(name=fc.name, response={"resultado": resultado}))
+                respostas.append(types.Part(function_response=types.FunctionResponse(
+                    id=fc.id, name=fc.name, response={"resultado": resultado})))
             contents.append(types.Content(role="user", parts=respostas))
 
         with obs.observacao("verify-answer", "guardrail", input=texto) as span:

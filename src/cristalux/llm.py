@@ -129,11 +129,14 @@ _ESGOTADOS: dict[str, float] = {}  # modelo -> instante em que a cota diaria aca
 _PAUSA_APOS_ESGOTAR = 3600.0
 
 
-def _gerar_com_reserva(modelo: str, contents, config):
-    """Tenta o modelo principal e, se a cota diaria acabou ou ele esta indisponivel, os modelos de reserva em ordem.
+_PAUSA_OPENROUTER = 600.0
 
-    Um modelo cuja cota acabou e pulado por uma hora no processo, para nao repetir chamadas que vao falhar.
-    Devolve (resposta, modelo_usado).
+
+def _gerar_com_reserva(modelo: str, contents, config):
+    """Cadeia de geracao: Gemini principal, Gemini de reserva e, por ultimo, modelos gratuitos do OpenRouter.
+
+    Um modelo cuja cota acabou e pulado por um tempo no processo, para nao repetir chamadas que vao falhar.
+    Devolve (resposta, modelo_usado); o modelo do OpenRouter volta como "openrouter:<id>".
     """
     from google.genai import errors
 
@@ -149,6 +152,24 @@ def _gerar_com_reserva(modelo: str, contents, config):
             ultimo = e
         except errors.ServerError as e:  # 503 persistente: tenta o proximo
             ultimo = e
+        except errors.ClientError as e:  # 400 (ex.: historico incompativel com este modelo): tenta o proximo
+            if getattr(e, "code", None) == 429:
+                _ESGOTADOS[m] = time.time()
+            ultimo = e
+
+    if settings.openrouter_api_key:
+        from cristalux import llm_openrouter
+
+        sistema = getattr(config, "system_instruction", None)
+        for m in settings.openrouter_models:
+            chave = f"openrouter:{m}"
+            if time.time() - _ESGOTADOS.get(chave, 0.0) < _PAUSA_OPENROUTER:
+                continue
+            try:
+                return llm_openrouter.gerar(m, contents, config, sistema), chave
+            except llm_openrouter.ErroOpenRouter as e:
+                _ESGOTADOS[chave] = time.time()
+                ultimo = e
     raise ultimo or CotaDiariaEsgotada("todos os modelos estao sem cota")
 
 
