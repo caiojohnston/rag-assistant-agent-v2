@@ -14,6 +14,7 @@ PAPEL_AGENTE = "cristalux_agent_ro"
 
 
 def conectar(url: str | None = None, **kw) -> psycopg.Connection:
+    kw.setdefault("connect_timeout", 10)  # banco fora do ar nao pode travar testes nem o boot
     return psycopg.connect(url or settings.database_url, **kw)
 
 
