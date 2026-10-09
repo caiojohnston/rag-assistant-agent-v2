@@ -193,16 +193,26 @@ if pergunta:
             vivo.code("\n".join(linhas), language="text")
 
         resp = responder(pergunta, historico=historico, on_event=ao_evento, session_id=st.session_state.sessao,
-                         tags=["streamlit"])
-        passos = obs.buscar_passos(resp.trace_id) if resp.trace_id else None
+                         tags=["streamlit"], descarregar=False)
         status.update(label="Raciocínio do agente", state="error" if resp.erro else "complete", expanded=False)
         msg = {
             "role": "assistant", "content": resp.texto, "fontes": resp.fontes, "tabelas": resp.tabelas,
-            "trace_id": resp.trace_id, "trace_url": resp.trace_url, "passos_langfuse": passos,
+            "trace_id": resp.trace_id, "trace_url": resp.trace_url, "passos_langfuse": None,
             "eventos": [{"tipo": e.tipo, "titulo": e.titulo, "dados": e.dados, "t": e.t} for e in resp.eventos],
         }
         vivo.empty()
         with status:
-            mostrar_passos(msg)
-        mostrar_resposta(msg, com_raciocinio=False)
-    st.session_state.mensagens.append(msg)
+            passos_ph = st.empty()
+            with passos_ph.container():
+                mostrar_passos(msg)  # eventos locais: aparecem na hora
+        mostrar_resposta(msg, com_raciocinio=False)  # a resposta vai para a tela sem esperar o Langfuse
+        st.session_state.mensagens.append(msg)
+        # So depois da resposta na tela: envia o trace e troca os passos locais pelos lidos do Langfuse.
+        if resp.trace_id:
+            obs.descarregar()
+            passos = obs.buscar_passos(resp.trace_id)
+            if passos:
+                msg["passos_langfuse"] = passos
+                passos_ph.empty()
+                with passos_ph.container():
+                    mostrar_passos(msg)

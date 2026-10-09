@@ -127,7 +127,7 @@ def _executar_tool(nome: str, args: dict, emitir) -> dict:
 
 @obs.observar(name="answer-question", as_type="agent")
 def responder(pergunta: str, historico: list[dict] | None = None, on_event=None,
-              session_id: str | None = None, tags: list[str] | None = None) -> Resposta:
+              session_id: str | None = None, tags: list[str] | None = None, descarregar: bool = True) -> Resposta:
     """Executa o laco de function calling. `on_event(Evento)` e chamado a cada passo (para a interface).
 
     `session_id` agrupa as perguntas de uma mesma conversa no Langfuse; `tags` identificam a origem (app, avaliacao).
@@ -138,10 +138,10 @@ def responder(pergunta: str, historico: list[dict] | None = None, on_event=None,
     with obs.contexto(session_id=session_id, tags=["assistente"] + (tags or []),
                       metadata={"modelo": settings.gemini_model, "embeddings": backend_padrao(),
                                 "turnos_no_historico": len(historico or [])}):
-        return _responder(pergunta, historico, on_event)
+        return _responder(pergunta, historico, on_event, descarregar)
 
 
-def _responder(pergunta: str, historico: list[dict] | None, on_event) -> Resposta:
+def _responder(pergunta: str, historico: list[dict] | None, on_event, descarregar: bool = True) -> Resposta:
     eventos: list[Evento] = []
     inicio = time.time()
 
@@ -212,5 +212,6 @@ def _responder(pergunta: str, historico: list[dict] | None, on_event) -> Respost
                  trace_url=obs.trace_url(tid), erro=erro)
     obs.atualizar(output=texto, metadata={"chamadas_de_tool": chamadas, "fontes": len(fontes), "erro": erro},
                   level="ERROR" if erro else "DEFAULT", status_message=erro)
-    obs.descarregar()
+    if descarregar:  # a interface adia o envio do trace para depois de mostrar a resposta
+        obs.descarregar()
     return r
