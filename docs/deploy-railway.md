@@ -22,6 +22,25 @@ O script cria os esquemas, as views e o papel somente leitura `cristalux_agent_r
 
 Saída esperada: cinco linhas `X limpas, Y em quarentena` (compradores 15/15, vendedores 18/2, estoque 15/15, decisões 20/3, vendas 96/94).
 
+### Alternativa sem expor o banco (foi a usada no deploy real)
+
+Em vez da URL pública, abra um túnel criptografado com o Railway CLI (login feito com `railway login`):
+
+```powershell
+railway link -p <id-do-projeto> -e production -s Postgres
+railway connect Postgres --tunnel-only -P 15432     # deixa o túnel aberto; mostra usuário e senha do banco
+```
+
+Em outro terminal, na raiz do projeto, aponte a carga para o túnel:
+
+```powershell
+$env:DATABASE_URL = "postgresql://postgres:<senha-mostrada-pelo-tunel>@127.0.0.1:15432/railway"
+$env:AGENT_DB_PASSWORD = "<senha-do-papel-somente-leitura>"
+.\.venv\Scripts\python.exe -m cristalux.pipeline.run
+```
+
+O banco não precisa de acesso público, e a senha do papel somente leitura é a mesma que vai na variável `AGENT_DB_PASSWORD` do app.
+
 ## 3. Criar o serviço do app
 
 1. `+ New` > `GitHub Repo` > escolha `rag-assistant-agent-v2` (repositório privado: autorize o app do Railway no GitHub quando pedir).
