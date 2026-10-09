@@ -106,7 +106,7 @@ def mostrar_passos(msg: dict) -> None:
             mostrar_valor("Saída", p["saida"])
     else:
         if obs.habilitado() and msg.get("trace_id"):
-            st.caption("Trace remoto indisponível no momento; mostrando os passos locais")
+            st.caption("Passos locais. Os do Langfuse substituem estes quando o trace termina de chegar.")
         for ev in msg.get("eventos", []):
             mostrar_passo_local(ev)
     if msg.get("trace_url"):
